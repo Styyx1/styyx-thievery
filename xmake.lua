@@ -5,7 +5,7 @@ set_xmakever("2.8.2")
 includes("lib/commonlibsse")
 
 -- set project
-set_project("commonlibsse-template")
+set_project("styyx-thievery")
 set_version("1.0.0")
 set_license("GPL-3.0")
 
@@ -18,25 +18,32 @@ add_rules("mode.debug", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
 
 -- set policies
+set_policy("build.optimization.lto", true)
 set_policy("package.requires_lock", true)
+
 
 -- set configs
 set_config("skyrim_ae", true)
+set_config("commonlib_toml", true)
+set_config("commonlib_json", true)
+
+add_extrafiles("release/**.toml")
+add_extrafiles("release/**.json")
 
 -- targets
-target("commonlibsse-template")
+target("styyx-thievery")
     -- add dependencies to target
     add_deps("commonlibsse")
-
+    set_policy("build.c++.modules", true)
     -- add commonlibsse plugin
     add_rules("commonlibsse.plugin", {
-        name = "commonlibsse-template",
+        name = "styyx-thievery",
         author = "styyx",
-        description = "SKSE64 plugin template using CommonLibSSE"
+        description = "overhaul for skyrim's thief skills"
     })
 
     -- add src files
-    add_files("src/**.cpp")
+    add_files("src/**.cpp", "src/*.ixx")
     add_headerfiles("src/**.h")
     add_includedirs("src")
     set_pcxxheader("src/pch.h")
