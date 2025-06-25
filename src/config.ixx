@@ -19,13 +19,31 @@ namespace Config
         static inline REX::TOML::F32 lockpicking_min_time{ "Lockpicking.Settings", "fLockpickingMinTime", 10.0f };
         static inline REX::TOML::F32 lockpicking_max_time{ "Lockpicking.Settings", "fLockpickingMaxTime", 50.0f };
         static inline REX::TOML::I32 reputation_min_item_value{ "Reputation.Settings", "iMinItemValueForReputation", 50 };
+        static inline REX::TOML::I32 hourly_heat_decrease{ "Reputation.Settings", "iHourlyHeatDecrease", 2 };
+        static inline REX::TOML::I32 fence_value_heat_threshold{ "Reputation.Settings", "iFenceItemValueHeatThreshold", 158 };
+        static inline REX::TOML::Bool show_infamy_meter{ "Reputation.Settings", "bShowInfamyMeter", true };
+        // HUD Related Settings:
+        static inline REX::TOML::Bool is_bar_vertical{ "InfamyMeter.Settings", "bInfamyMeterVertical", false };
+        static inline REX::TOML::F32 bar_pos_x{ "InfamyMeter.Settings", "fInfamyMeterPositionX", 500.0f };
+        static inline REX::TOML::F32 bar_pos_y{ "InfamyMeter.Settings", "fInfamyMeterPositionY", 50.0f };
+        static inline REX::TOML::F32 bar_size_length{ "InfamyMeter.Settings","fInfamyBarLenght",200.0f };
+        static inline REX::TOML::F32 bar_size_width{ "InfamyMeter.Settings", "fInfamyBarWidth", 20.0f };
+        static inline REX::TOML::F32 editor_pos_x{ "InfamyMeter.Editor", "fEditorWindowPositionX", 100.0f };
+        static inline REX::TOML::F32 editor_pos_y{ "InfamyMeter.Editor", "fEditorWindowPositionY", 400.0f };
 
         void Update();
+        void Save();
     };
     inline void Settings::Update()
     {
         auto toml = REX::TOML::SettingStore::GetSingleton();
         toml->Init(Constants::toml_path_default.data(), Constants::toml_path_custom.data());
         toml->Load();
+    }
+
+    inline void Settings::Save() {
+        auto toml = REX::TOML::SettingStore::GetSingleton();
+        toml->Init(Constants::toml_path_default.data(), Constants::toml_path_custom.data());
+        toml->Save();
     }
 }

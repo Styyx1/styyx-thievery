@@ -1,0 +1,32 @@
+[Lockpicking.Timer]
+bEnableLockpickTimer = true
+
+[Lockpicking.Settings]
+bRemoveLockpickOnTimeout = true
+fLockpickingMinTime = 10.0
+fLockpickingMaxTime = 50.0
+
+[Pickpocket.Timer]
+bEnablePickpocketTimer = true
+
+[Pickpocket.Settings]
+bEnableDynamicPickpocketChance = true
+fPickpocketMinTime = 10.0
+fPickpocketMaxTime = 50.0
+
+[Reputation.Settings]
+iMinItemValueForReputation = 50
+iHourlyHeatDecrease = 2
+iFenceItemValueHeatThreshold = 158
+bShowInfamyMeter = true
+
+[InfamyMeter.Settings]
+bInfamyMeterVertical = false
+fInfamyMeterPositionX = 500.0
+fInfamyMeterPositionY = 50.0
+fInfamyBarLenght = 200.0
+fInfamyBarWidth = 20.0
+
+[InfamyMeter.Editor]
+fEditorWindowPositionX = 100.0
+fEditorWindowPositionY = 400.0

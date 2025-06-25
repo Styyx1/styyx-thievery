@@ -31,9 +31,16 @@ add_extrafiles("release/**.toml")
 add_extrafiles("release/**.json")
 
 -- targets
+-- ImGui static lib target
+target("imgui")
+    set_kind("static")
+    add_files("extern/ImGUI/*.cpp")
+    add_includedirs("extern/ImGUI", {public = true})
+
 target("styyx-thievery")
     -- add dependencies to target
     add_deps("commonlibsse")
+    add_deps("imgui")
     set_policy("build.c++.modules", true)
     -- add commonlibsse plugin
     add_rules("commonlibsse.plugin", {
@@ -47,6 +54,11 @@ target("styyx-thievery")
     add_headerfiles("src/**.h")
     add_includedirs("src")
     set_pcxxheader("src/pch.h")
+    add_includedirs("extern/ImGUI")
+    add_includedirs("extern/ImGUI/backends")
+    add_files("extern/ImGUI/backends/imgui_impl_dx11.cpp")
+    add_files("extern/ImGUI/backends/imgui_impl_win32.cpp")
+    add_includedirs("extern/clibutil/include", { public = true })
 
 after_build(function(target)
     local copy = function(env, ext)
