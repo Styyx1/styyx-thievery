@@ -1,6 +1,7 @@
 import config;
 import inputhandler;
 import Pickpocket;
+import heat;
 #include "formloader.h"
 #include "papyrus.h"
 
@@ -14,6 +15,7 @@ void InitListener(SKSE::MessagingInterface::Message* a_msg) {
 	case SKSE::MessagingInterface::kDataLoaded:
 		FormLoader::Loader::GetSingleton()->LoadForms();
 		PickpocketTimer::InitPickpocketCapChange();
+		ReputationPerkHandler::GetSingleton()->RegisterCellEvent();
 		break;
 
 	case SKSE::MessagingInterface::kPostLoadGame:

@@ -48,10 +48,33 @@ export struct Utility {
                 get_actor_within_radius(actor.get());
             }
         }
-        REX::INFO("closest actor is: {}", result ? result->GetDisplayFullName() : "nullptr");
+        if(result)
+            REX::INFO("closest actor is: {}", result->GetDisplayFullName());
+       
         return result;
     }
 
+    static bool IsEffectActive(RE::Actor* a_actor, RE::EffectSetting* a_effect)
+    {
+        if (!a_actor || !a_effect) {
+            return false;
+        }
+        auto activeEffects = a_actor->GetActiveEffectList();
+        RE::EffectSetting* setting       = nullptr;
+        if (!activeEffects->empty()) {
+            for (RE::ActiveEffect* effect : *activeEffects) {
+                if (effect; !effect->flags.any(RE::ActiveEffect::Flag::kInactive)) {
+                    setting = effect ? effect->GetBaseObject() : nullptr;
+                    if (setting) {
+                        if (setting == a_effect) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } 
+        return false;
+	}
 
     static bool IsGuardNearby(RE::TESObjectREFR* a_ref, float a_radius)
     {
@@ -66,8 +89,7 @@ export struct Utility {
 
             const auto get_actor_within_radius = [&](RE::Actor* a_actor) {
                 if (a_actor && a_actor != a_ref && a_actor->IsGuard() && originPos.GetSquaredDistance(a_actor->GetPosition()) <= squaredRadius) {
-                    result = a_actor;
-                }
+                    result = a_actor;}
                 };
 
             for (auto& actorHandle : processLists->highActorHandles) {
@@ -78,8 +100,6 @@ export struct Utility {
         REX::DEBUG("Guard is nearby: {}", result ? "true" : "false");
         return result;
     }
-
-
 
     static RE::Setting* get_gmst(const char* a_setting)
     {
@@ -125,8 +145,7 @@ export struct Randomiser
 };
 static std::mutex state_mutex;
 export struct UtilStates {
-    static inline bool inCrimeScene = false;
-   
+    static inline bool inCrimeScene = false;   
 
     static void SetInCrimeScene(bool enable) {
         std::lock_guard<std::mutex> lock(state_mutex);
@@ -139,40 +158,37 @@ export struct UtilStates {
     }
 
     static RE::TESObjectCELL* curr_crime_cell;
-
 };
 
 export struct Crimes 
 {
     static uint64_t GetCrimeValue(RE::Actor* a_actor, RE::PackageNS::CRIME_TYPE a_crime, RE::TESFaction* a_faction, int32_t a_itemValue = 0) {
         using func_t = decltype(&GetCrimeValue);
-        REL::Relocation<func_t> func{ REL::ID(37680) };
+        REL::Relocation<func_t> func{ REL::ID(37680) }; //SE 36672
         return func(a_actor, a_crime, a_faction, a_itemValue);
     }
 
     static void SendTrespassingAlarm(RE::Actor* a_this, RE::Actor* a_caughtBy, RE::TESNPC* a_caughtByBase, RE::PackageNS::CRIME_TYPE a_crimeType = RE::PackageNS::CRIME_TYPE::kTrespass) {
         using func_t = decltype(&SendTrespassingAlarm);
-        REL::Relocation<func_t> func{ REL::ID(37427) };
+        REL::Relocation<func_t> func{ REL::ID(37427) }; // SE 36432
         return func(a_this, a_caughtBy, a_caughtByBase, a_crimeType);
     }
 
     static bool unk_Assault(RE::AIProcess* a_victimProcess, RE::Actor* a_victim, RE::Actor* a_aggressor, int64_t param_4 = 0, float param_5 = 0) {
         using func_t = decltype(&unk_Assault);
-        REL::Relocation<func_t> func{ REL::ID(39359) };
+        REL::Relocation<func_t> func{ REL::ID(39359) }; // SE 38375
         return func(a_victimProcess, a_victim, a_aggressor, param_4, param_5);
     }
 
     static void SendAssaultAlarm(RE::Actor* a_this, RE::Actor* a_attacker, int32_t a3, float a4) {
         using func_t = decltype(&SendAssaultAlarm);
-        REL::Relocation<func_t> func{ REL::ID(37424) };
+        REL::Relocation<func_t> func{ REL::ID(37424) }; //SE 36429
         return func(a_this, a_attacker, a3, a4);
     }
 
     static void SendStealAlarm(RE::Actor* a_this, RE::Actor * a_thief, RE::TESObjectREFR * a_stolenItemRef, RE::TESForm * a_stolenItemBase, int32_t a_stolenItemCount, int32_t a_itemWorth, RE::TESForm * a_owner, bool a8) {
-        //SE ID: 36427 SE Offset: Not Found
-        //AE ID: 37422 AE Offset: 0x0
         using func_t = decltype(&SendStealAlarm);
-        REL::Relocation<func_t> func{ REL::ID(37422) };
+		REL::Relocation<func_t> func{ REL::ID(37422) }; // SE 36427
         return func(a_this, a_thief, a_stolenItemRef, a_stolenItemBase, a_stolenItemCount, a_itemWorth, a_owner, a8);
     }
 };

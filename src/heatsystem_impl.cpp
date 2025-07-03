@@ -2,6 +2,7 @@ module heat;
 #include "formloader.h"
 import config;
 import utility;
+import generalStealing;
 
 constexpr float MIN_HEAT_INCREASE = 2.0f;
 constexpr float MAX_HEAT_INCREASE = 10.0f;
@@ -51,12 +52,12 @@ bool HeatSystem::IsHeatAbove(float a_threshold)
 
 void HeatSystem::UpdateHeatValueExternal()
 {
-	float min_value = Config::Settings::GetSingleton()->fence_value_heat_threshold.GetValue();
+	float min_value = static_cast<float>(Config::Settings::GetSingleton()->fence_value_heat_threshold.GetValue());
 
 	if (min_value >= HEAT_MAX_ITEM_VALUE) 
 		min_value = HEAT_MAX_ITEM_VALUE - 1.0f;
 	
-	float value = HeatValues::item_value_fenced;
+	float value = static_cast<float>(HeatValues::item_value_fenced);
 	if (value >= min_value) {		
 		float heat_increase = MIN_HEAT_INCREASE;
 
@@ -118,9 +119,96 @@ std::int32_t HeatSystem::ReCalculateDetectionLevel(std::int32_t a_level)
 		return 100;
 }
 
+std::pair<RE::TESBoundObject*, std::int32_t> HeatSystem::GetRandomInventoryItem(const RE::TESObjectREFR::InventoryItemMap& inventory)
+{
+	if (inventory.empty())
+		return { nullptr, 0 };
 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	std::vector<std::pair<RE::TESBoundObject*, std::int32_t>> miscItems;
+
+	// Collect all misc items first
+	for (const auto& [object, data] : inventory) {
+		if (object && object->GetFormType() == RE::FormType::Misc) {
+			miscItems.emplace_back(object, data.first);
+		}
+	}
+
+	// If none found, return null
+	if (miscItems.empty())
+		return { nullptr, 0 };
+
+	// Pick a random one
+	std::uniform_int_distribution<size_t> dist(0, miscItems.size() - 1);
+	auto& selected = miscItems[dist(gen)];
+
+	return selected;
+}
+
+float HeatSystem::GetRandomPickpocketChance(float pickpocketSkill, float infamy, float reputation)
+{
+	constexpr float maxChance = 70.0f;
+
+	float baseChance = (pickpocketSkill / 100.0f) * maxChance;
+	float heatPenalty = (infamy / 100.0f) * (maxChance * 0.5f);
+	float repBonus = (reputation > 250.0f) 
+		? ((reputation - 250.0f) / 250.0f) * (maxChance * 0.2f)
+		: 0.0f;
+
+	float finalChance = baseChance - heatPenalty + repBonus;
+
+	// Clamp to [0, maxChance]
+	finalChance = std::clamp(finalChance, 0.0f, maxChance);
+	return finalChance;
+}
+
+void HeatSystem::AddPickpocketExperience()
+{
+	const auto& player = RE::PlayerCharacter::GetSingleton();
+
+	float HandToHandLevel = player->GetActorValue(RE::ActorValue::kPickpocket);
+
+	float baseXP = (0.15f * HandToHandLevel) + 3.0f;
+
+	player->AddSkillExperience(RE::ActorValue::kPickpocket, baseXP);	
+}
+
+// used for pickpocket while bump, infamy reduction, infamy conseqences
 void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 {
+	const auto& formL = FormLoader::Loader::GetSingleton();
+	if (Utility::IsEffectActive(a_player, formL->sleight_of_hand_effect)) {
+		if (!a_player->IsRunning() && !a_player->IsAttacking() && !a_player->IsInCombat() && !a_player->IsBlocking() && a_player->GetWeaponState() != RE::WEAPON_STATE::kDrawn) {
+			RE::Actor* close_actor = Utility::GetClosestNonTeammate(a_player, 60.f);
+			if (close_actor && !close_actor->IsGuard() && !a_player->GetCurrentScene() && a_player->IsInFaction(close_actor->GetCrimeFaction()) && !close_actor->IsChild() && close_actor->GetRace()->HasKeywordString("ActorTypeNPC")) {
+				RE::TESObjectREFR::InventoryItemMap inv_map = close_actor->GetInventory();
+				auto random_item = GetRandomInventoryItem(inv_map);
+				if (random_item.first && random_item.second > 0 && !actor_pickpocketed.contains(close_actor)) {
+					actor_pickpocketed.insert(close_actor);
+					REX::INFO("attempting to pickpocket item: {} with amount: {}", random_item.first->GetName(), random_item.second);
+					if (Randomiser::GetRandomFloat(0.0f, 100.0f) < GetRandomPickpocketChance(a_player->GetActorValue(RE::ActorValue::kPickpocket), GetHeatValue(), Stealing::NightThief::GetNightReputation())) {
+						REX::INFO("pickpocket success");					
+						close_actor->RemoveItem(random_item.first, random_item.second, RE::ITEM_REMOVE_REASON::kSteal, nullptr, a_player);
+						AddPickpocketExperience();
+						RE::DebugNotification(std::format("You successfully pickpocketed {} from {}.",random_item.first->GetName(),close_actor->GetName()).c_str());
+					}
+					else {
+						REX::INFO("pickpocket failed");
+						// if you fail, you get a chance to be attacked by the victim
+						int random_int = Randomiser::GetRandomInt(0,100);
+						if (random_int >= 25) {
+							Crimes::SendAssaultAlarm(close_actor, a_player, 0 , 0);
+							Crimes::unk_Assault(a_player->currentProcess, a_player, close_actor);
+						}
+					}
+				}
+			}
+		}	
+	}
+	
+
 	if (a_player->GetParentCell() != UtilStates::curr_crime_cell && UtilStates::IsInCrimeScene() || !a_player->GetParentCell()) {
 		UtilStates::SetInCrimeScene(false);
 		AllCrimeTimersStop();
@@ -207,4 +295,201 @@ void HeatSystem::DoCalculateDetection(RE::Actor* a_this, RE::Actor* target, std:
 		}
 		return;
 	}	
+}
+
+void ReputationPerkHandler::RegisterCellEvent()
+{
+	if (auto player = RE::PlayerCharacter::GetSingleton()) {
+		player->AddEventSink<RE::BGSActorCellEvent>(ReputationPerkHandler::GetSingleton());
+	}
+	REX::INFO("Registered for {}", typeid(ReputationPerkHandler).name());
+}
+
+RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>*)
+{
+	if (!a_event)
+		return RE::BSEventNotifyControl::kContinue;
+
+	
+
+	if (a_event->flags.get() == RE::BGSActorCellEvent::CellFlag::kEnter) {
+
+		if (!HeatSystem::actor_pickpocketed.empty()) {
+			HeatSystem::actor_pickpocketed.clear();
+		}
+		const auto& player = RE::PlayerCharacter::GetSingleton();
+		const auto& forms = FormLoader::Loader::GetSingleton();
+		const auto cell = RE::TESForm::LookupByID<RE::TESObjectCELL>(a_event->cellID);
+		bool _foundStuff = false;
+		if (!cell->IsInteriorCell() || forms->exception_cell_formlist->HasForm(cell->GetLocation())) {
+			return RE::BSEventNotifyControl::kContinue;
+		}
+		if (CellIsDangerousLocation(cell, danger_loc)) {
+			return RE::BSEventNotifyControl::kContinue;
+		}
+		
+		if (!player->HasPerk(forms->gold_rush_perk)) {
+			return RE::BSEventNotifyControl::kContinue;
+		}
+
+		const auto& valuables = GetValuablesInCell(cell);
+
+		if (!valuables.empty()) {
+			_foundStuff = true;
+			const auto& settings = Config::Settings::GetSingleton();
+			for(const auto& item : valuables)
+			{				
+				item->ApplyEffectShader(forms->glow_shader, settings->gold_rush_shader_duration.GetValue());
+#ifdef ENABLE_DEBUGGING
+				REX::INFO("Found valuable item: {} in cell: {}", item->GetName(), cell->GetName());
+#endif
+			}		
+			const char* sound = nullptr;
+			if (settings->enable_gold_rush_sound.GetValue()) {
+				sound = "ST_GoldRushCoinSoundSD";
+			}
+			std::jthread{ [=] {
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+				SKSE::GetTaskInterface()->AddTask([=] {
+					RE::DebugNotification(settings->screen_notif_text.GetValue().c_str(), sound);
+					});
+				} }.detach();	
+		}		
+	}
+	return RE::BSEventNotifyControl::kContinue;
+}
+
+bool ReputationPerkHandler::ReferenceIsInventoryItem(RE::TESForm* a_ref)
+{
+	if (a_ref) {
+		switch (a_ref->GetFormType()) {
+		case RE::FormType::Armor:
+		case RE::FormType::Weapon:
+		case RE::FormType::Misc:
+		case RE::FormType::AlchemyItem:
+		case RE::FormType::Ammo:
+		case RE::FormType::Book:
+		case RE::FormType::Flora:
+		case RE::FormType::Ingredient:
+			return true;
+		default :
+			return false;
+		}
+	}
+	return false;
+	
+}
+
+bool ReputationPerkHandler::CellIsDangerousLocation(RE::TESObjectCELL* a_cell, const std::unordered_set<std::string_view>& keywords)
+{
+	if (!a_cell || !a_cell->GetLocation())
+		return true;
+
+	for (const auto& keyword : keywords) {
+		if (a_cell->GetLocation()->HasKeywordString(keyword)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ReputationPerkHandler::AreValuablesInCell(RE::TESObjectCELL* a_cell)
+{
+	bool found_item = false;
+	static const auto& settings = Config::Settings::GetSingleton();
+	a_cell->ForEachReference([this, &found_item](RE::TESObjectREFR* ref) {	
+		auto base = ref->GetBaseObject();
+		if (!base)
+			return RE::BSContainer::ForEachResult::kContinue;
+		auto extra = ref->extraList.GetByType<RE::ExtraEnchantment>();
+
+		if (ReferenceIsInventoryItem(base)) {
+			if (base->GetGoldValue() > settings->reputation_min_item_value.GetValue() || extra) {
+				found_item = true;
+				return RE::BSContainer::ForEachResult::kStop;
+			}
+		}					
+		if (base->GetFormType() == RE::FormType::Container) {
+			RE::TESContainer* const &container = ref->GetContainer();
+			container->ForEachContainerObject([&](RE::ContainerObject const &entry) -> RE::BSContainer::ForEachResult {
+				auto object = entry.obj;
+				if (object->Is(RE::FormType::LeveledItem)) {
+					auto list = object->As<RE::TESLeveledList>();
+					RE::BSScrapArray<RE::CALCED_OBJECT> calcedObjects{};
+					list->CalculateCurrentFormList(RE::PlayerCharacter::GetSingleton()->GetLevel(), static_cast<int16_t>(entry.count), calcedObjects, 0, true);
+					for (auto& calcObj : calcedObjects) {
+						if (calcObj.form->GetGoldValue() > settings->reputation_min_item_value.GetValue()) {
+							found_item = true;
+							return RE::BSContainer::ForEachResult::kStop;
+						}
+					}
+				}								
+				else{
+					if (object && object->GetGoldValue()  > settings->reputation_min_item_value.GetValue()) {								
+					found_item = true;
+					return RE::BSContainer::ForEachResult::kStop;
+					}
+				}				
+				return RE::BSContainer::ForEachResult::kContinue;
+				});
+		}
+		return RE::BSContainer::ForEachResult::kContinue;
+		});
+	return found_item;
+}
+
+std::vector<RE::TESObjectREFR*> ReputationPerkHandler::GetValuablesInCell(RE::TESObjectCELL* a_cell)
+{
+#ifdef ENABLE_DEBUGGING
+	//timer to measure performance. Debug only
+	Timer po3Timer;
+	po3Timer.start();	
+#endif
+	std::vector<RE::TESObjectREFR*> valuables;
+	bool found_item = false;
+	static const auto& settings = Config::Settings::GetSingleton();
+	a_cell->ForEachReference([this, &valuables](RE::TESObjectREFR* ref) {	
+		auto base = ref->GetBaseObject();
+		if (!base)
+			return RE::BSContainer::ForEachResult::kContinue;
+		auto extra = ref->extraList.GetByType<RE::ExtraEnchantment>();
+
+		if (ReferenceIsInventoryItem(base)) {
+			if (base->GetGoldValue() > settings->reputation_min_item_value.GetValue() || extra) {
+				valuables.emplace_back(ref);
+				return RE::BSContainer::ForEachResult::kContinue;
+			}
+		}					
+		if (base->GetFormType() == RE::FormType::Container) {
+			RE::TESContainer* const &container = ref->GetContainer();
+			container->ForEachContainerObject([&](RE::ContainerObject const &entry) -> RE::BSContainer::ForEachResult {
+				auto object = entry.obj;
+				if (object->Is(RE::FormType::LeveledItem)) {
+					auto list = object->As<RE::TESLeveledList>();
+					RE::BSScrapArray<RE::CALCED_OBJECT> calcedObjects{};
+					list->CalculateCurrentFormList(RE::PlayerCharacter::GetSingleton()->GetLevel(), static_cast<int16_t>(entry.count), calcedObjects, 0, true);
+					for (auto& calcObj : calcedObjects) {
+						if (calcObj.form->GetGoldValue() > settings->reputation_min_item_value.GetValue()) {
+							valuables.emplace_back(ref);
+							return RE::BSContainer::ForEachResult::kStop;
+						}
+					}
+				}								
+				else{
+					if (object && object->GetGoldValue()  > settings->reputation_min_item_value.GetValue()) {								
+						valuables.emplace_back(ref);
+						return RE::BSContainer::ForEachResult::kContinue;
+					}
+				}				
+				return RE::BSContainer::ForEachResult::kContinue;
+				});
+		}
+		return RE::BSContainer::ForEachResult::kContinue;
+		});
+#ifdef ENABLE_DEBUGGING
+	po3Timer.end();
+	REX::INFO("timer ran for {}", po3Timer.duration());
+#endif
+	return valuables;
 }

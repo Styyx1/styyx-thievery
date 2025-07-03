@@ -24,19 +24,4 @@ private:
 
 	static inline REL::Hook _Hook13{ REL::ID(40654), 0x12c, CalculatePickPocketChancePlayer };
 	static inline REL::Hook _Hook14{ REL::ID(51130), 0x213, CalculatePickPocketChance };
-
-	/*
-	
-	fPickPocketActorSkillBase 20.0
-	fPickPocketActorSkillMult 1.0
-	fPickPocketAmountMult -0.1
-	fPickPocketMaxChance 90.0
-	fPickPocketMinChance 0.0
-	fPickpocketSkillUsesCurve 0.8
-	fPickPocketTargetSkillBase 20.0
-	fPickPocketTargetSkillMult -0.25
-	fPickPocketWeightMult -4.0
-	
-	*/
-
 };

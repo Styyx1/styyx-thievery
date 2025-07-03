@@ -10,8 +10,6 @@ import Pickpocket;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam); 
 
-
-
 namespace InfamyHUD {
 
 	static InfamyHUDDisplay* g_infamyHUDMenu = nullptr;
@@ -196,6 +194,7 @@ namespace InfamyHUD {
 			_isVertical = config->is_bar_vertical.GetValue();
 			_editorPosX = config->editor_pos_x.GetValue();
 			_editorPosY = config->editor_pos_y.GetValue();
+			_showMeter = config->show_infamy_meter.GetValue();
 			//Thievery
 			PickpocketTimer::_PTimerEnabled = (config->enable_pickpocket_timer.GetValue());
 			LockpickingMenu::_timerEnabled = config->enable_lockpick_timer.GetValue();
@@ -203,11 +202,18 @@ namespace InfamyHUD {
 			_pickpocketMaxTime = config->pickpocket_max_time.GetValue();
 			_lockpickMaxTime = config->lockpicking_max_time.GetValue();
 			_lockpickMinTime = config->lockpicking_min_time.GetValue();
+			_lockpickConsequence = config->remove_lockpick_on_timeout.GetValue();
 			_dynamicPickpocketEnable = config->enable_dyn_pickpocket_cap.GetValue();
+			_dynamicLockpickEnable = config->enable_dynamic_lockpicking.GetValue();
 			//Infamy/Reputation
 			_minItemValueForRep = config->reputation_min_item_value.GetValue();
 			_minItemValueToIncreaseInfamy = config->fence_value_heat_threshold.GetValue();
 			_hourlyInfamyDecrease = config->hourly_heat_decrease.GetValue();
+			//Reputation perks
+			_goldRushNotifText = config->screen_notif_text.GetValue();
+			_goldRushScreen = config->show_gold_rush_screen.GetValue();
+			_goldRushShaderDuration = config->gold_rush_shader_duration.GetValue();
+			_goldRushSoundEnabled = config->enable_gold_rush_sound.GetValue();			
 
 
 
@@ -227,11 +233,13 @@ namespace InfamyHUD {
 		config->bar_pos_y.SetValue(_barPosY);
 		config->bar_size_length.SetValue(_barHorSizeX);
 		config->bar_size_width.SetValue(_barHorSizeY);
+		config->show_infamy_meter.SetValue(_showMeter);
 		//lockpicking
 		config->enable_lockpick_timer.SetValue(LockpickingMenu::_timerEnabled);
 		config->remove_lockpick_on_timeout.SetValue(_lockpickConsequence);
 		config->lockpicking_min_time.SetValue(_lockpickMinTime);
 		config->lockpicking_max_time.SetValue(_lockpickMaxTime);
+		config->enable_dynamic_lockpicking.SetValue(_dynamicLockpickEnable);
 		//pickpocket
 		config->enable_pickpocket_timer.SetValue(PickpocketTimer::_PTimerEnabled);
 		config->pickpocket_min_time.SetValue(_pickpocketMinTime);
@@ -241,19 +249,26 @@ namespace InfamyHUD {
 		config->reputation_min_item_value.SetValue(_minItemValueForRep);
 		config->fence_value_heat_threshold.SetValue(_minItemValueToIncreaseInfamy);
 		config->hourly_heat_decrease.SetValue(_hourlyInfamyDecrease);
+		//Reputation perks
+		config->show_gold_rush_screen.SetValue(_goldRushScreen);
+		config->screen_notif_text.SetValue(_goldRushNotifText);
+		config->gold_rush_shader_duration.SetValue(_goldRushShaderDuration);
+		config->enable_gold_rush_sound.SetValue(_goldRushSoundEnabled);
 
 		config->Save();
 	}
 
 	void InfamyHUDDisplay::DrawHUDElement(ImDrawList* draw_list, ImVec2& pos, ImVec2& size)
 	{
-		float fraction = HeatFillPct();
-		if (IsVertical())
-			DrawVerticalBar(draw_list, pos, size, fraction);
-		else
-			DrawHorizontalBar(draw_list, pos, size, fraction);
-		// move cursor to avoid overlapping with next element
-		ImGui::Dummy(size);
+		if (_showMeter) {
+			float fraction = HeatFillPct();
+			if (IsVertical())
+				DrawVerticalBar(draw_list, pos, size, fraction);
+			else
+				DrawHorizontalBar(draw_list, pos, size, fraction);
+			// move cursor to avoid overlapping with next element
+			ImGui::Dummy(size);
+		}		
 	}
 
 	void InfamyHUDDisplay::DrawEditor()
@@ -292,6 +307,8 @@ namespace InfamyHUD {
 		ImGui::Separator();
 		//Infamy Bar
 		ImGui::Checkbox("Infamy Bar: Vertical", &_isVertical);
+		ImGui::SameLine();
+		ImGui::Checkbox("Infamy Bar: Show Meter", &_showMeter);
 		ImGui::SliderFloat("Infamy Bar: Length", &_barHorSizeX, 50.0f, 400.0f);
 		ImGui::SliderFloat("infamy Bar: Width", &_barHorSizeY, 10.0f, 50.0f);
 		ImGui::Separator();
@@ -301,6 +318,8 @@ namespace InfamyHUD {
 		ImGui::Checkbox("Lockpicking: Timer Toggle", &LockpickingMenu::_timerEnabled);
 		ImGui::SameLine();
 		ImGui::Checkbox("Lockpicking: Remove Lockpick on Fail", &_lockpickConsequence);
+		ImGui::SameLine();
+		ImGui::Checkbox("Lockpicking: Toggle dynamic lockpicking", &_dynamicLockpickEnable);
 		ImGui::SliderFloat("Lockpicking: Minimum Time", &_lockpickMinTime, 5.0f, 30.0f);
 		ImGui::SliderFloat("Lockpicking: Maximum Time", &_lockpickMaxTime, 31.0f, 120.0f);
 		//Pickpocketing
@@ -321,6 +340,11 @@ namespace InfamyHUD {
 		ImGui::SliderInt("Reputation: Min Item Value to gain reputation", &_minItemValueForRep, 30, 400);
 		ImGui::SliderInt("Infamy: Hourly Infamy Decrease", &_hourlyInfamyDecrease, 1, 4);
 		ImGui::SliderInt("Infamy: Item Value threshold to increase Infamy",&_minItemValueToIncreaseInfamy, 100, 600);
+		//Rputation perks
+		ImGui::SeparatorText("Reputation Perks");
+		ImGui::Checkbox("Gold Rush: Sound Effect Toggle", &_goldRushSoundEnabled);
+		ImGui::SliderFloat("Gold Rush: Shader Duration", &_goldRushShaderDuration, 1.0f, 240.0f, "%.0f");
+
 		//end
 		ImGui::PopItemWidth();
 		ImGui::PopStyleVar();

@@ -17,7 +17,6 @@ namespace InfamyHUD {
 		static void RendererInit();
 		static void ApplyHUDStyle();
 		static inline REL::Hook _Hook12{ REL::ID(77226), 0x275, &RendererInit };
-	
 		static inline bool bInitialized = false;
 		static inline bool bStyleApplied = false;
 		static inline bool bColorApplied = false;		
@@ -66,6 +65,13 @@ namespace InfamyHUD {
 		int _hourlyInfamyDecrease = 2;
 		int _minItemValueToIncreaseInfamy = 158;
 		bool _dynamicPickpocketEnable = true;
+		bool _dynamicLockpickEnable = true;
+		bool _showMeter = true;
+		//reputation perks:
+		bool _goldRushScreen;
+		std::string _goldRushNotifText;
+		bool _goldRushSoundEnabled;
+		float _goldRushShaderDuration;
 	};
 
 	struct WndProc

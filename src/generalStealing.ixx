@@ -17,7 +17,7 @@ export namespace Stealing {
 		static inline REL::HookVFT _Hook1{ RE::VTABLE_PlayerCharacter[0], 0x5A, OnItemAdded };
 		static inline REL::HookVFT _Hook2{ RE::VTABLE_PlayerCharacter[0], 0xCC, PickupObject};
 		static inline REL::HookVFT _Hook3{ RE::VTABLE_PlayerCharacter[0], 0x0B6, ModCrimeGoldValueHook};
-		static inline REL::Hook _Hook6{ REL::ID(50951), 0x1f9, GetExtraData }; // 0x2ca // 0x121
+		static inline REL::Hook _Hook6{ REL::ID(50951), 0x1f9, GetExtraData }; // SE ID: 50007
 
 		static void CalculateReputationLootChance(); // changes a ChanceNone global for leveled lists. used for special loot with high thief reputation.
 		static bool IsNight();

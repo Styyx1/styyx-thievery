@@ -22,6 +22,7 @@ namespace Config
         static inline REX::TOML::I32 hourly_heat_decrease{ "Reputation.Settings", "iHourlyHeatDecrease", 2 };
         static inline REX::TOML::I32 fence_value_heat_threshold{ "Reputation.Settings", "iFenceItemValueHeatThreshold", 158 };
         static inline REX::TOML::Bool show_infamy_meter{ "Reputation.Settings", "bShowInfamyMeter", true };
+        static inline REX::TOML::Bool enable_dynamic_lockpicking{ "Lockpicking.Settings", "bEnableDynamicLocks", true };
         // HUD Related Settings:
         static inline REX::TOML::Bool is_bar_vertical{ "InfamyMeter.Settings", "bInfamyMeterVertical", false };
         static inline REX::TOML::F32 bar_pos_x{ "InfamyMeter.Settings", "fInfamyMeterPositionX", 500.0f };
@@ -30,6 +31,14 @@ namespace Config
         static inline REX::TOML::F32 bar_size_width{ "InfamyMeter.Settings", "fInfamyBarWidth", 20.0f };
         static inline REX::TOML::F32 editor_pos_x{ "InfamyMeter.Editor", "fEditorWindowPositionX", 100.0f };
         static inline REX::TOML::F32 editor_pos_y{ "InfamyMeter.Editor", "fEditorWindowPositionY", 400.0f };
+		 // Perk related settings
+        static inline REX::TOML::Bool show_gold_rush_screen{ "Reputation.Perks", "fShowGoldRushScreenEffect", true };
+        static inline REX::TOML::Str screen_notif_text{ "Reputation.Perks", "sGoldRushScreenText", std::string("Something catches your eye...") };
+		static inline REX::TOML::Bool enable_gold_rush_sound{ "Reputation.Perks", "bEnableGoldRushSound", true };
+		static inline REX::TOML::F32 gold_rush_shader_duration{ "Reputation.Perks", "fGoldRushShaderDuration", 30.0f };
+
+        // keybinds
+        static inline REX::TOML::Str editor_key{ "Keybinds", "sEnterEditMode", std::string("F8") };
 
         void Update();
         void Save();

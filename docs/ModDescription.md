@@ -7,6 +7,7 @@ It's designed to make thievery a bit more challenging but also more rewarding wh
 
 - Timed Lockpicking: You are getting kicked out of the lockpicking menu after a set time, based on your lockpicking skill level.
 - Removes lockpick from your inventory as if you broke it. It also triggers basically the same reaction the game does for a lockpick related crime.
+- Dynamic Lockpicking: The higher your infamy level gets, the easier locks are to pick, but you're also easier to spot, keep that in mind.
 
 ### Pickpocketing
 

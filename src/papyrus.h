@@ -23,6 +23,9 @@ namespace Papyrus {
         void IncreaseThiefReputation(SCRIPT_ARGS, int a_amount);
         bool GetIsPickpocketTimerRunning(SCRIPT_ARGS);
         bool GetIsLockpickTimerRunning(SCRIPT_ARGS);
+        bool IsSomethingOfValueHere(SCRIPT_ARGS);
+
+        
 
         //Register Function
         void Bind(RE::BSScript::Internal::VirtualMachine& a_vm);

@@ -6,6 +6,7 @@ module lockpicking;
 
 import utility;
 import config;
+import heat;
 
 static UtilTimer lockpick_timer{};
 
@@ -36,12 +37,15 @@ bool LockpickingMenu::IsTimerEnabled()
 	return _timerEnabled;
 }
 
+static bool angle_adjusted = false;
+
 RE::UI_MESSAGE_RESULTS LockpickingMenu::ProcessMessage(RE::LockpickingMenu* a_this, RE::UIMessage& a_message)
 {
+	static const auto& config = Config::Settings::GetSingleton();
 	if (IsTimerEnabled()) {
 		if (a_message.type == RE::UI_MESSAGE_TYPE::kShow) {
-
 			StartLockpickTimer();
+			angle_adjusted = false;
 		}
 		if (a_message.type == RE::UI_MESSAGE_TYPE::kHide) {
 			StopLockpickTimer();
@@ -52,6 +56,11 @@ RE::UI_MESSAGE_RESULTS LockpickingMenu::ProcessMessage(RE::LockpickingMenu* a_th
 			auto isCrimeToAct = a_this->GetTargetReference()->IsCrimeToActivate();
 			LockpickConsequeces(RE::PlayerCharacter::GetSingleton(), isCrimeToAct); 	
 		}
+	}
+	if (config->enable_dynamic_lockpicking.GetValue() && !angle_adjusted && a_this->sweetSpotAngle > 0) {
+		float infamyLevel = HeatSystem::GetHeatValue();
+		a_this->sweetSpotAngle *= std::lerp(0.85f, 1.15f, ( infamyLevel) / 100.0f);
+		angle_adjusted = true;
 	}
 	return _Hook5(a_this, a_message);
 }
@@ -73,8 +82,10 @@ void LockpickingMenu::StopLockpickTimer()
 
 void LockpickingMenu::LockpickConsequeces(RE::Actor *a_player, bool isCrime)
 {
-	const auto& formLoader = FormLoader::Loader::GetSingleton();
-	a_player->RemoveItem(formLoader->lockpick_item, 1, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
+	static const auto& formLoader = FormLoader::Loader::GetSingleton();
+	static const auto& config = Config::Settings::GetSingleton();
+	if(config->remove_lockpick_on_timeout.GetValue())
+		a_player->RemoveItem(formLoader->lockpick_item, 1, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
 	bool unk1 = false;
 	RE::Actor* crime_reporter = Utility::GetClosestNonTeammate(a_player, 1024.0);
 	if (crime_reporter && isCrime) {

@@ -5,11 +5,12 @@ bEnableLockpickTimer = true
 bRemoveLockpickOnTimeout = true
 fLockpickingMinTime = 10.0
 fLockpickingMaxTime = 50.0
+bEnableDynamicLocks = true
 
 [Pickpocket.Timer]
 bEnablePickpocketTimer = true
 
-[Pickpocket.Settings]
+[PickPocket.Settings]
 bEnableDynamicPickpocketChance = true
 fPickpocketMinTime = 10.0
 fPickpocketMaxTime = 50.0
@@ -19,6 +20,12 @@ iMinItemValueForReputation = 50
 iHourlyHeatDecrease = 2
 iFenceItemValueHeatThreshold = 158
 bShowInfamyMeter = true
+
+[Reputation.Perks]
+fShowGoldRushScreenEffect = true
+sGoldRushScreenText = "Something catches your eye..."
+bEnableGoldRushSound = true
+fGoldRushShaderDuration = 60.0
 
 [InfamyMeter.Settings]
 bInfamyMeterVertical = false
@@ -30,3 +37,6 @@ fInfamyBarWidth = 20.0
 [InfamyMeter.Editor]
 fEditorWindowPositionX = 100.0
 fEditorWindowPositionY = 400.0
+
+[Keybinds]
+sEnterEditMode = "F8"

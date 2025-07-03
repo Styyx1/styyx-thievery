@@ -10,6 +10,14 @@ namespace FormLoader{
 		static inline RE::FormID total_value_item_ID = 0x3;
 		static inline RE::FormID fence_rep_special_item_ID = 0x4;
 		static inline RE::FormID player_heat_ID = 0x5;
+		static inline RE::FormID gold_rush_ID = 0x7;
+		static inline RE::FormID gold_rush_sound_ID = 0x9;
+		static inline RE::FormID glow_shader_ID = 0xC;
+		static inline RE::FormID gold_rush_perk_ID = 0xD;
+		static inline RE::FormID sleight_of_hand_spell_ID = 0x10;
+		static inline RE::FormID sleight_of_hand_effect_ID = 0xF;
+		static inline RE::FormID exception_cell_formlist_ID = 0x11;
+
 		//extern
 		static inline RE::FormID lockpicks_ID = 0xA;
 	}
@@ -21,6 +29,13 @@ namespace FormLoader{
 		RE::TESGlobal* total_value_item_fenced;
 		RE::TESGlobal* fence_rep_special_item_global;
 		RE::TESGlobal* player_heat_system_global;
+		RE::TESImageSpaceModifier *gold_rush_imad;
+		RE::BGSSoundDescriptorForm* gold_rush_sound;
+		RE::TESEffectShader* glow_shader;
+		RE::BGSPerk* gold_rush_perk;
+		RE::SpellItem* sleight_of_hand_spell;
+		RE::EffectSetting* sleight_of_hand_effect;
+		RE::BGSListForm* exception_cell_formlist;
 		//extern
 		RE::TESObjectMISC* lockpick_item;
 

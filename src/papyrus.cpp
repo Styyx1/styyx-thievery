@@ -3,6 +3,7 @@ import Pickpocket;
 import lockpicking;
 import config;
 import generalStealing;
+import heat;
 
 namespace Papyrus {
 	int Functions::GetVersion(SCRIPT_ARGS)
@@ -38,6 +39,17 @@ namespace Papyrus {
 		return LockpickingMenu::GetIsTimerRunning();
 	}
 
+	bool Functions::IsSomethingOfValueHere(SCRIPT_ARGS)
+	{
+		RE::PlayerCharacter* const& player = RE::PlayerCharacter::GetSingleton();
+		auto cell = player->GetParentCell();
+		if (cell) {
+			return cell->IsInteriorCell() ? ReputationPerkHandler::GetSingleton()->AreValuablesInCell(cell) : false;
+		}
+		return false;
+		
+	}
+
 	void Functions::Bind(RE::BSScript::Internal::VirtualMachine& a_vm)
 	{
 		if (CurrentVersion >= API_VERSION::kVersion1) {
@@ -45,10 +57,11 @@ namespace Papyrus {
 			a_vm.RegisterFunction("GetRemainingLockpickTime", script_name, GetRemainingLockpickTime);
 			a_vm.RegisterFunction("GetRemainingPickpocketTime", script_name, GetRemainingPickpocketTime);
 			a_vm.RegisterFunction("GetThiefReputation", script_name, GetThiefReputation);
-			a_vm.RegisterFunction("DecreaseThiefReputationBy20Percent", script_name, DecreaseThiefReputationPercentage);
+			a_vm.RegisterFunction("DecreaseThiefReputationPercentage", script_name, DecreaseThiefReputationPercentage);
 			a_vm.RegisterFunction("IncreaseThiefReputation", script_name, IncreaseThiefReputation);
 			a_vm.RegisterFunction("GetIsPickpocketTimerRunning", script_name, GetIsPickpocketTimerRunning);
 			a_vm.RegisterFunction("GetIsLockpickTimerRunning", script_name, GetIsLockpickTimerRunning);
+			a_vm.RegisterFunction("IsSomethingOfValueHere", script_name, IsSomethingOfValueHere);
 		}
 		REX::INFO("Registered Papyrus functions for {}", script_name);
 	}

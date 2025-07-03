@@ -13,7 +13,7 @@ void InputManager::Register()
 
 void InputManager::SetEditorKey()
 {
-    if (!activate_editor_key.SetPattern("F8")) {
+    if (!activate_editor_key.SetPattern(Config::Settings::editor_key.GetValue())) {
         REX::ERROR("failed to set editor key");
     }
 }

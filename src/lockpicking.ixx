@@ -13,6 +13,5 @@ private:
 	static inline REL::HookVFT _Hook5{ RE::VTABLE_LockpickingMenu[0], 0x4, ProcessMessage };
 	static void StartLockpickTimer();
 	static void StopLockpickTimer();
-	static void LockpickConsequeces(RE::Actor* player, bool isCrime);
-	
+	static void LockpickConsequeces(RE::Actor* player, bool isCrime);	
 };
