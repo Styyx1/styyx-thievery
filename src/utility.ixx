@@ -49,7 +49,7 @@ export struct Utility {
             }
         }
         if(result)
-            REX::INFO("closest actor is: {}", result->GetDisplayFullName());
+            REX::DEBUG("closest actor is: {}", result->GetDisplayFullName());
        
         return result;
     }

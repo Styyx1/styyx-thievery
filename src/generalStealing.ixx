@@ -42,4 +42,9 @@ export namespace Stealing {
 		RE::GFxValue oldFunc;
 		RE::BarterMenu* a_this;
 	};
+
+	struct CrimeTracker {
+		static void LowerAllBounties(float a_amount);
+		static void LowerBounty(RE::PlayerCharacter* a_player, RE::TESFaction* a_faction, float a_amount);
+	};
 }

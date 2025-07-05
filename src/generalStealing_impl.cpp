@@ -228,7 +228,40 @@ namespace Stealing {
 	{
 		const auto& loader = FormLoader::Loader::GetSingleton();
 		REX::INFO("total before: {}", loader->total_value_item_fenced->value);
-		loader->total_amount_item_fenced->value += item_count;
+		loader->total_amount_item_fenced->value += item_count;		
 		loader->total_value_item_fenced->value += item_value;
+	}
+
+	void CrimeTracker::LowerAllBounties(float a_amount)
+	{
+		if (a_amount <= 0.0f) {
+			REX::ERROR("Invalid amount for LowerAllBounties");
+			return;
+		}
+		const auto& player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			return;
+		}
+		for (auto& [faction, bounty] : player->crimeGoldMap) {
+			bounty.nonViolentCur = std::max(0.0f, bounty.nonViolentCur - a_amount);
+			REX::INFO("Lowered bounty for faction {} by {}. New value: {}", faction->GetName(), a_amount, bounty.nonViolentCur);
+		}
+		REX::INFO("All bounties lowered by {}", a_amount);
+	}
+
+	void CrimeTracker::LowerBounty(RE::PlayerCharacter* a_player, RE::TESFaction* a_faction, float a_amount)
+	{
+		if (!a_player || !a_faction || a_amount <= 0.0f) {
+			REX::ERROR("Invalid parameters for LowerBounty");
+			return;
+		}
+		auto& tracked_bounties = a_player->crimeGoldMap;
+		auto it = tracked_bounties.find(a_faction);
+		if (it != tracked_bounties.end()) {
+			it->second.nonViolentCur = std::max(0.0f, it->second.nonViolentCur - a_amount);
+			REX::INFO("Lowered bounty for faction {} by {}. New value: {}", a_faction->GetName(), a_amount, it->second.nonViolentCur);
+		} else {
+			REX::ERROR("Faction not found in tracked bounties");
+		}
 	}
 }

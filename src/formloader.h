@@ -17,6 +17,11 @@ namespace FormLoader{
 		static inline RE::FormID sleight_of_hand_spell_ID = 0x10;
 		static inline RE::FormID sleight_of_hand_effect_ID = 0xF;
 		static inline RE::FormID exception_cell_formlist_ID = 0x11;
+		static inline RE::FormID extra_kill_loot_rep_perk_ID = 0x12;
+		static inline RE::FormID sleight_of_hand_perk_ID     = 0x13;
+		static inline RE::FormID fence_price_increase_perk_ID = 0x14;
+		static inline RE::FormID lower_bounty_perk_ID        = 0x15;
+		static inline RE::FormID new_bribes_perk_ID          = 0x16;
 
 		//extern
 		static inline RE::FormID lockpicks_ID = 0xA;
@@ -36,6 +41,12 @@ namespace FormLoader{
 		RE::SpellItem* sleight_of_hand_spell;
 		RE::EffectSetting* sleight_of_hand_effect;
 		RE::BGSListForm* exception_cell_formlist;
+		RE::BGSPerk* extra_kill_loot_rep_perk;
+		RE::BGSPerk* sleight_of_hand_perk;
+		RE::BGSPerk* fence_price_increase_perk;
+		RE::BGSPerk* lower_bounty_perk;
+		RE::BGSPerk* new_bribes_perk;
+
 		//extern
 		RE::TESObjectMISC* lockpick_item;
 
