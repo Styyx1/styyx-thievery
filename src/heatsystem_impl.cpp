@@ -76,6 +76,7 @@ void HeatSystem::UpdateHeatValueExternal()
 static UtilTimer g_heat_decrease_timer;
 static UtilTimer g_wait_in_crime_timer;
 static UtilTimer g_heat_increase_timer;
+static UtilTimer g_bounty_decrease_timer;
 static bool timer_was_run = false;
 
 void AllCrimeTimersStop() {
@@ -206,6 +207,20 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 				}
 			}
 		}	
+	}
+
+	if (a_player->HasPerk(formL->lower_bounty_perk)) {
+		if (!g_bounty_decrease_timer.IsRunning()) {
+			g_bounty_decrease_timer.Start(120);
+		}
+		if (g_wait_in_crime_timer.IsRunning() && g_wait_in_crime_timer.Elapsed() >= g_wait_in_crime_timer.GetExpectedRuntime()) {
+			Stealing::CrimeTracker::LowerAllBounties(5.0f);
+			g_bounty_decrease_timer.Reset();
+		}
+	}
+	else {
+		if (g_bounty_decrease_timer.IsRunning())
+			g_bounty_decrease_timer.Stop();
 	}
 	
 

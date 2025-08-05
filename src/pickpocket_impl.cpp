@@ -2,6 +2,7 @@ module Pickpocket;
 import utility;
 import config;
 import heat;
+#include "formloader.h"
 
 static UtilTimer timer{}; 
 constexpr float kUninitializedChance = 224.363f;
@@ -42,6 +43,9 @@ void PickpocketTimer::AdjustPickpocketCapWithHeat()
 {
 	float heat_lvl = HeatSystem::GetHeatValue();
 	float new_cap = std::lerp(75.0f, 50.0f, heat_lvl / 100.0f);
+	if (RE::PlayerCharacter::GetSingleton()->HasPerk(FormLoader::Loader::GetSingleton()->no_bounty_perk)) {
+		new_cap = std::lerp(75.0f, 100.0f, heat_lvl / 100.0f);
+	}
 	SetPickpocketChance(new_cap);
 }
 

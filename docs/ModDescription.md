@@ -13,7 +13,7 @@ It's designed to make thievery a bit more challenging but also more rewarding wh
 
 - Timed Pickpocketing: You are getting kicked out of the pickpocket inventory after a set time, based on your pickpocket skill and whether or not the target is sleeping.
 - Dynamic Pickpocket cap: changes the pickpocket cap based on your Infamy level. The higher it is, the harder pickpocketing gets down to 50% maximum chance. It also adjusts the overall pickpocket chance ± 15% based on the infamy level.
--
+- Default Pickpocket max chance is set to 75% (instead of 90%) but if you have all 5 reputation perks, it can go up to 100%
 
 ### Reputation
 
@@ -22,3 +22,6 @@ It's designed to make thievery a bit more challenging but also more rewarding wh
 - Reputation Perks:
     - Gold Rush: Whenever you enter a cell, valuable items and containers will be highlighted for you.
     - Sleight of Hand: You can pickpocket items from NPCs by bumping into them. Note, your chance of success is lowered this way.
+    - Friends in High Places: Your non-violent bounties are reduced over time.
+    - Shady Merchant: Sell stolen items for 20% more gold.
+    - 10% chance to not get a bounty for minor, non-violent crimes.

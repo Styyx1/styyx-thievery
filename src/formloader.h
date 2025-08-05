@@ -21,7 +21,7 @@ namespace FormLoader{
 		static inline RE::FormID sleight_of_hand_perk_ID     = 0x13;
 		static inline RE::FormID fence_price_increase_perk_ID = 0x14;
 		static inline RE::FormID lower_bounty_perk_ID        = 0x15;
-		static inline RE::FormID new_bribes_perk_ID          = 0x16;
+		static inline RE::FormID no_bounty_perk_ID          = 0x16;
 
 		//extern
 		static inline RE::FormID lockpicks_ID = 0xA;
@@ -45,7 +45,7 @@ namespace FormLoader{
 		RE::BGSPerk* sleight_of_hand_perk;
 		RE::BGSPerk* fence_price_increase_perk;
 		RE::BGSPerk* lower_bounty_perk;
-		RE::BGSPerk* new_bribes_perk;
+		RE::BGSPerk* no_bounty_perk;
 
 		//extern
 		RE::TESObjectMISC* lockpick_item;

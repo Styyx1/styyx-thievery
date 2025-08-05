@@ -129,6 +129,14 @@ namespace Stealing {
 
 	void NightThief::ModCrimeGoldValueHook(RE::Actor* a_this, RE::TESFaction* a_faction, bool a_violent, int32_t a_amount)
 	{
+		auto chance_bounty = Randomiser::GetRandomInt(0, 100);
+		if (a_this->HasPerk(FormLoader::Loader::GetSingleton()->no_bounty_perk) && !a_violent) {
+			if (chance_bounty <= 10) {
+				REX::INFO("Player has the no bounty perk, chance to not get a bounty: {}", chance_bounty);
+				return; // 10% chance to not get a bounty if player has the no bounty perk
+			}
+		}
+
 		_Hook3(a_this, a_faction, a_violent, a_amount);
 		REX::DEBUG("info dump: actor is: {}, faction is: {}, violent crime bool is: {}, amount is: {}", a_this->GetName(), a_faction->GetName(), a_violent ? "true" : "false", a_amount);
 		if (a_amount > 0 && !a_violent) {
@@ -179,6 +187,9 @@ namespace Stealing {
 				float mult = 1.0f;
 				if (!object->IsOwnedBy(RE::PlayerCharacter::GetSingleton())) {
 					mult = CalculateNightThiefPrice();
+					if(RE::PlayerCharacter::GetSingleton()->HasPerk(FormLoader::Loader::GetSingleton()->fence_price_increase_perk)) {
+						mult *= 1.2f; // increase price by 20% if player has the fence price increase perk
+					}
 					RE::GFxValue value(RE::GFxValue::ValueType::kNumber);
 					a_updateObj.GetMember("value", &value);
 					value.SetNumber(value.GetNumber() * mult);

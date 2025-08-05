@@ -24,6 +24,7 @@ namespace Papyrus {
         bool GetIsPickpocketTimerRunning(SCRIPT_ARGS);
         bool GetIsLockpickTimerRunning(SCRIPT_ARGS);
         bool IsSomethingOfValueHere(SCRIPT_ARGS);
+		void DecreaseAllBounties(SCRIPT_ARGS, float a_amount);
 
         
 

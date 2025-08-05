@@ -50,6 +50,22 @@ namespace Papyrus {
 		
 	}
 
+	void Functions::DecreaseAllBounties(SCRIPT_ARGS, float a_amount)
+	{
+		if (a_amount <= 0.0f) {
+			REX::ERROR("DecreaseAllBounties called with non-positive amount: {}", a_amount);
+			return;
+		}
+		const auto& player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			REX::ERROR("Player character not found.");
+			return;
+		}
+		Stealing::CrimeTracker::LowerAllBounties(a_amount);
+
+		REX::INFO("Decreased all bounties by {}", a_amount);
+	}
+
 	void Functions::Bind(RE::BSScript::Internal::VirtualMachine& a_vm)
 	{
 		if (CurrentVersion >= API_VERSION::kVersion1) {
@@ -62,6 +78,7 @@ namespace Papyrus {
 			a_vm.RegisterFunction("GetIsPickpocketTimerRunning", script_name, GetIsPickpocketTimerRunning);
 			a_vm.RegisterFunction("GetIsLockpickTimerRunning", script_name, GetIsLockpickTimerRunning);
 			a_vm.RegisterFunction("IsSomethingOfValueHere", script_name, IsSomethingOfValueHere);
+			a_vm.RegisterFunction("DecreaseAllBounties", script_name, DecreaseAllBounties);
 		}
 		REX::INFO("Registered Papyrus functions for {}", script_name);
 	}
