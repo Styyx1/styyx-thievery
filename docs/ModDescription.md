@@ -18,10 +18,10 @@ It's designed to make thievery a bit more challenging but also more rewarding wh
 ### Reputation
 
 - Thief reputation: When stealing valuable items at night you build up reputation that opens up great ways to get rich. Note that if you're caught for any crime, that reputation will decrease. 
-- Infamy System: Similar but opposite to the reputation system is the Infamy System. Anytime you get a bounty, your infamy level rises and makes sneaking near guards and pickpocketing much harder. Guards may randomly attack you because they know you.
+- Infamy System: Similar but opposite to the reputation system is the Infamy System. Anytime you get a bounty, your infamy level rises and makes sneaking near guards and pickpocketing much harder. Guards may randomly attack you because they know you. Infamy decreases over time.
 - Reputation Perks:
-    - Gold Rush: Whenever you enter a cell, valuable items and containers will be highlighted for you.
-    - Sleight of Hand: You can pickpocket items from NPCs by bumping into them. Note, your chance of success is lowered this way.
-    - Friends in High Places: Your non-violent bounties are reduced over time.
-    - Shady Merchant: Sell stolen items for 20% more gold.
-    - 10% chance to not get a bounty for minor, non-violent crimes.
+    - 80 reputation: Gold Rush: Whenever you enter a cell, valuable items and containers will be highlighted for you.
+    - 150 reputation: Sleight of Hand: You can pickpocket items from NPCs by bumping into them. Note, your chance of success is lowered this way.
+    - 210 reputation: Friends in High Places: Your non-violent bounties are reduced over time.
+    - 260 reputation: Shady Merchant: Sell stolen items for 20% more gold.
+    - 310 reputation: 10% chance to not get a bounty for minor, non-violent crimes.
