@@ -63,7 +63,7 @@ namespace Papyrus {
 		}
 		Stealing::CrimeTracker::LowerAllBounties(a_amount);
 
-		REX::INFO("Decreased all bounties by {}", a_amount);
+		REX::DEBUG("Decreased all bounties by {}", a_amount);
 	}
 
 	void Functions::Bind(RE::BSScript::Internal::VirtualMachine& a_vm)

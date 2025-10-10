@@ -70,14 +70,14 @@ void LockpickingMenu::StartLockpickTimer()
 	if (!lockpick_timer.IsRunning()) {
 		float time = GetCalcTimerForLockpicking();
 		lockpick_timer.Start(time);
-		REX::INFO("started lockpick timer for {} seconds", time);
+		REX::DEBUG("started lockpick timer for {} seconds", time);
 	}
 }
 
 void LockpickingMenu::StopLockpickTimer()
 {
 	lockpick_timer.Stop();
-	REX::INFO("stopped lockpick timer");
+	REX::DEBUG("stopped lockpick timer");
 }
 
 void LockpickingMenu::LockpickConsequeces(RE::Actor *a_player, bool isCrime)
@@ -89,12 +89,12 @@ void LockpickingMenu::LockpickConsequeces(RE::Actor *a_player, bool isCrime)
 	bool unk1 = false;
 	RE::Actor* crime_reporter = Utility::GetClosestNonTeammate(a_player, 1024.0);
 	if (crime_reporter && isCrime) {
-		REX::INFO("crime reporter is: {}", crime_reporter->GetDisplayFullName());
+		REX::DEBUG("crime reporter is: {}", crime_reporter->GetDisplayFullName());
 		if (crime_reporter->HasLineOfSight(a_player, unk1)) {
 			auto faction = crime_reporter->GetActorBase()->crimeFaction;
 			if (faction) {
 				auto value = Crimes::GetCrimeValue(a_player, RE::PackageNS::CRIME_TYPE::kTrespass, faction);
-				REX::INFO("crime value is: {}", value);
+				REX::DEBUG("crime value is: {}", value);
 				a_player->ModCrimeGoldValue(faction, false, value);
 				Crimes::SendTrespassingAlarm(a_player, crime_reporter, crime_reporter->GetActorBase(), RE::PackageNS::CRIME_TYPE::kTrespass);
 			}			

@@ -108,19 +108,19 @@ namespace Stealing {
 		auto extra = _Hook6(a_inventoryEntry, a_soldItems, is_equipped);
 		if (a_inventoryEntry) {
 			auto obj = a_inventoryEntry->GetObject();
-			REX::INFO("object is {}", obj->GetName());
-			REX::INFO("is_equipped for {} is {}", obj->GetName(), is_equipped ? "true" : "false");
+			REX::DEBUG("object is {}", obj->GetName());
+			REX::DEBUG("is_equipped for {} is {}", obj->GetName(), is_equipped ? "true" : "false");
 		}
 		if (a_soldItems) {
-			REX::INFO("number is: {}",a_soldItems);
+			REX::DEBUG("number is: {}",a_soldItems);
 		}
 
 		if (extra) {
 			if (extra->GetOwner() != RE::PlayerCharacter::GetSingleton()) {
 
-				REX::INFO("selling stolen item with a worth of: {}", HeatValues::item_value_fenced);
+				REX::DEBUG("selling stolen item with a worth of: {}", HeatValues::item_value_fenced);
 				NightThiefFencing::IncreaseFencedItemCountAndAmount(1, HeatValues::item_value_fenced);
-				REX::INFO("Fence amounts: item value from item card: {}", HeatValues::item_value_fenced);
+				REX::DEBUG("Fence amounts: item value from item card: {}", HeatValues::item_value_fenced);
 				HeatSystem::UpdateHeatValueExternal();				
 			}
 		}
@@ -132,7 +132,7 @@ namespace Stealing {
 		auto chance_bounty = Randomiser::GetRandomInt(0, 100);
 		if (a_this->HasPerk(FormLoader::Loader::GetSingleton()->no_bounty_perk) && !a_violent) {
 			if (chance_bounty <= 10) {
-				REX::INFO("Player has the no bounty perk, chance to not get a bounty: {}", chance_bounty);
+				REX::DEBUG("Player has the no bounty perk, chance to not get a bounty: {}", chance_bounty);
 				return; // 10% chance to not get a bounty if player has the no bounty perk
 			}
 		}
@@ -213,7 +213,7 @@ namespace Stealing {
 			return;
 		}
 
-		REX::INFO("Trader in PostCreate is: {}", trader->GetName());
+		REX::DEBUG("Trader in PostCreate is: {}", trader->GetName());
 
 		auto& barter = *a_this;
 		auto& root = barter.root;
@@ -238,7 +238,7 @@ namespace Stealing {
 	void NightThiefFencing::IncreaseFencedItemCountAndAmount(uint32_t item_count, uint32_t item_value)
 	{
 		const auto& loader = FormLoader::Loader::GetSingleton();
-		REX::INFO("total before: {}", loader->total_value_item_fenced->value);
+		REX::DEBUG("total before: {}", loader->total_value_item_fenced->value);
 		loader->total_amount_item_fenced->value += item_count;		
 		loader->total_value_item_fenced->value += item_value;
 	}
@@ -255,9 +255,9 @@ namespace Stealing {
 		}
 		for (auto& [faction, bounty] : player->crimeGoldMap) {
 			bounty.nonViolentCur = std::max(0.0f, bounty.nonViolentCur - a_amount);
-			REX::INFO("Lowered bounty for faction {} by {}. New value: {}", faction->GetName(), a_amount, bounty.nonViolentCur);
+			REX::DEBUG("Lowered bounty for faction {} by {}. New value: {}", faction->GetName(), a_amount, bounty.nonViolentCur);
 		}
-		REX::INFO("All bounties lowered by {}", a_amount);
+		REX::DEBUG("All bounties lowered by {}", a_amount);
 	}
 
 	void CrimeTracker::LowerBounty(RE::PlayerCharacter* a_player, RE::TESFaction* a_faction, float a_amount)
@@ -270,7 +270,7 @@ namespace Stealing {
 		auto it = tracked_bounties.find(a_faction);
 		if (it != tracked_bounties.end()) {
 			it->second.nonViolentCur = std::max(0.0f, it->second.nonViolentCur - a_amount);
-			REX::INFO("Lowered bounty for faction {} by {}. New value: {}", a_faction->GetName(), a_amount, it->second.nonViolentCur);
+			REX::DEBUG("Lowered bounty for faction {} by {}. New value: {}", a_faction->GetName(), a_amount, it->second.nonViolentCur);
 		} else {
 			REX::ERROR("Faction not found in tracked bounties");
 		}

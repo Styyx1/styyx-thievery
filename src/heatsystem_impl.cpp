@@ -25,17 +25,17 @@ void HeatSystem::SetHeatValue(float a_value)
 void HeatSystem::IncreaseHeat(float a_value)
 {
 	const auto& formL = FormLoader::Loader::GetSingleton();
-	REX::INFO("Heat global before increasing is: {}", GetHeatValue());
+	REX::DEBUG("Heat global before increasing is: {}", GetHeatValue());
 	formL->player_heat_system_global->value = std::clamp(formL->player_heat_system_global->value + a_value, 0.0f, MAX_HEAT_VALUE);
-	REX::INFO("Heat global is: {}", GetHeatValue());
+	REX::DEBUG("Heat global is: {}", GetHeatValue());
 }
 
 void HeatSystem::DecreaseHeat(float a_value)
 {
 	const auto& formL = FormLoader::Loader::GetSingleton();
-	REX::INFO("Heat global before decreasing is: {}", GetHeatValue());
+	REX::DEBUG("Heat global before decreasing is: {}", GetHeatValue());
 	formL->player_heat_system_global->value = std::clamp(formL->player_heat_system_global->value - a_value, 0.0f, MAX_HEAT_VALUE);
-	REX::INFO("Heat global is: {}", GetHeatValue());	
+	REX::DEBUG("Heat global is: {}", GetHeatValue());	
 }
 
 void HeatSystem::ClearHeat()
@@ -93,7 +93,7 @@ void StartIngameHourTimer() {
 	if (!g_heat_decrease_timer.IsRunning()) {
 		RE::Calendar* cal = RE::Calendar::GetSingleton();		
 		g_heat_decrease_timer.Start(1800 / cal->GetTimescale());
-		REX::INFO("started decay timer for {} seconds", g_heat_decrease_timer.GetExpectedRuntime());
+		REX::DEBUG("started decay timer for {} seconds", g_heat_decrease_timer.GetExpectedRuntime());
 	}
 }
 
@@ -103,8 +103,8 @@ void HeatSystem::UpdatePassiveHeatDecay() {
 			StartIngameHourTimer();
 		} else if (g_heat_decrease_timer.Elapsed() >= g_heat_decrease_timer.GetExpectedRuntime()) {
 			g_heat_decrease_timer.Reset();
-			DecreaseHeat(5.0f);
-			REX::INFO("Decrease heat over time");
+			DecreaseHeat(Config::Settings::hourly_heat_decrease.GetValue());
+			REX::DEBUG("Decrease heat over time");
 		}
 	} else {
 		g_heat_decrease_timer.Stop();
@@ -188,15 +188,15 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 				auto random_item = GetRandomInventoryItem(inv_map);
 				if (random_item.first && random_item.second > 0 && !actor_pickpocketed.contains(close_actor)) {
 					actor_pickpocketed.insert(close_actor);
-					REX::INFO("attempting to pickpocket item: {} with amount: {}", random_item.first->GetName(), random_item.second);
+					REX::DEBUG("attempting to pickpocket item: {} with amount: {}", random_item.first->GetName(), random_item.second);
 					if (Randomiser::GetRandomFloat(0.0f, 100.0f) < GetRandomPickpocketChance(a_player->GetActorValue(RE::ActorValue::kPickpocket), GetHeatValue(), Stealing::NightThief::GetNightReputation())) {
-						REX::INFO("pickpocket success");					
+						REX::DEBUG("pickpocket success");					
 						close_actor->RemoveItem(random_item.first, random_item.second, RE::ITEM_REMOVE_REASON::kSteal, nullptr, a_player);
 						AddPickpocketExperience();
 						RE::DebugNotification(std::format("You successfully pickpocketed {} from {}.",random_item.first->GetName(),close_actor->GetName()).c_str());
 					}
 					else {
-						REX::INFO("pickpocket failed");
+						REX::DEBUG("pickpocket failed");
 						// if you fail, you get a chance to be attacked by the victim
 						int random_int = Randomiser::GetRandomInt(0,100);
 						if (random_int >= 25) {
@@ -227,18 +227,18 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 	if (a_player->GetParentCell() != UtilStates::curr_crime_cell && UtilStates::IsInCrimeScene() || !a_player->GetParentCell()) {
 		UtilStates::SetInCrimeScene(false);
 		AllCrimeTimersStop();
-		REX::INFO("left crime scene. stop all waiting timers");
+		REX::DEBUG("left crime scene. stop all waiting timers");
 	}
 	if (UtilStates::IsInCrimeScene() && !timer_was_run) {
 		if (!g_wait_in_crime_timer.IsRunning()) {
 			g_wait_in_crime_timer.Start(120);
-			REX::INFO("crime scene timer is running");
+			REX::DEBUG("crime scene timer is running");
 			timer_was_run = true;
 		}			
 	}
 	if (g_wait_in_crime_timer.IsRunning() && g_wait_in_crime_timer.Elapsed() >= g_wait_in_crime_timer.GetExpectedRuntime()) {
 		g_wait_in_crime_timer.Stop();
-		REX::INFO("wait time's over, start to gain infamy");
+		REX::DEBUG("wait time's over, start to gain infamy");
 		if (!g_heat_increase_timer.IsRunning()) {
 			g_heat_increase_timer.Start(30);
 		}
@@ -259,7 +259,7 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 void HeatSystem::OnGoToPrison(RE::PlayerCharacter* a_this, RE::TESFaction* a_faction, bool a_removeInventory, bool a_realJail)
 {
 	if (a_realJail) {
-		REX::INFO("went to jail");
+		REX::DEBUG("went to jail");
 		ClearHeat();
 	}
 	else {
@@ -275,14 +275,14 @@ void HeatSystem::PayCrime(RE::PlayerCharacter* a_this, RE::TESFaction* a_faction
 	auto& total_crimes = a_this->crimeGoldMap;
 
 	if (total_crimes.empty()) {
-		REX::INFO("no more crimes, clear heat");
+		REX::DEBUG("no more crimes, clear heat");
 		ClearHeat();
 	}
 	if (fine_now >= a_faction->crimeData.crimevalues.murderCrimeGold) {
-		// Don't reduce heat for murder bounties — your reputation remains infamous
+		// Don't reduce heat for murder bounties
 		return;
 	}
-	REX::INFO("fine now is {}", fine_now);
+	REX::DEBUG("fine now is {}", fine_now);
 	if (fine_now <= 100) {
 		DecreaseHeat(2.0f);
 	} else if (fine_now <= 150) {
@@ -317,7 +317,7 @@ void ReputationPerkHandler::RegisterCellEvent()
 	if (auto player = RE::PlayerCharacter::GetSingleton()) {
 		player->AddEventSink<RE::BGSActorCellEvent>(ReputationPerkHandler::GetSingleton());
 	}
-	REX::INFO("Registered for {}", typeid(ReputationPerkHandler).name());
+	REX::DEBUG("Registered for {}", typeid(ReputationPerkHandler).name());
 }
 
 RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>*)
@@ -356,7 +356,7 @@ RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorC
 			{				
 				item->ApplyEffectShader(forms->glow_shader, settings->gold_rush_shader_duration.GetValue());
 #ifdef ENABLE_DEBUGGING
-				REX::INFO("Found valuable item: {} in cell: {}", item->GetName(), cell->GetName());
+				REX::DEBUG("Found valuable item: {} in cell: {}", item->GetName(), cell->GetName());
 #endif
 			}		
 			const char* sound = nullptr;
@@ -504,7 +504,7 @@ std::vector<RE::TESObjectREFR*> ReputationPerkHandler::GetValuablesInCell(RE::TE
 		});
 #ifdef ENABLE_DEBUGGING
 	po3Timer.end();
-	REX::INFO("timer ran for {}", po3Timer.duration());
+	REX::DEBUG("timer ran for {}", po3Timer.duration());
 #endif
 	return valuables;
 }

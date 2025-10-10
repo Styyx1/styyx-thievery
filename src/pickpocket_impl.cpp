@@ -65,7 +65,7 @@ uint32_t PickpocketTimer::CalculatePickPocketChancePlayer(float a_thiefSkill, fl
 		modifier = std::lerp(0.85f, 1.15f, (100.0f - infamyLevel) / 100.0f);
 		result = std::clamp(result * modifier, 0.0f, actual_cap);
 	}
-	REX::INFO("pickpocket chance for player attempt pickpocket is: {}", result);
+	REX::DEBUG("pickpocket chance for player attempt pickpocket is: {}", result);
 	return result;
 }
 
@@ -112,7 +112,7 @@ void PickpocketTimer::InitPickpocketCapChange()
 	if (pickpocket_chance_default == kUninitializedChance) {
 		pickpocket_chance_default = Utility::get_gmst("fPickPocketMaxChance")->GetFloat();
 	}
-	REX::INFO("Original Pickpocket cap detected: {}", pickpocket_chance_default);
+	REX::DEBUG("Original Pickpocket cap detected: {}", pickpocket_chance_default);
 	SetPickpocketChance(75.0f);
 }
 

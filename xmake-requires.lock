@@ -9,7 +9,7 @@
                 commit = "30bf09689d5f65e9ea4e3904ceb675f8f04f0789",
                 url = "https://github.com/xmake-io/xmake-repo.git"
             },
-            version = "3.31.1"
+            version = "3.31.6-msvc6"
         },
         ["commonlib-shared 7c29a1e16b4ee5d5ee06f706590b28099b7a5a59#5ed5ab82"] = {
             repo = {

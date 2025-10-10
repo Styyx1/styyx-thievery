@@ -303,7 +303,7 @@ namespace InfamyHUD {
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 6));
 		ImGui::PushItemWidth(300.0f);
 		ImGui::Separator();
-		ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.1f, 1.0f), "Styyx Thievery Editor");
+		ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.1f, 1.0f), "Fortunes and Real Troubles");
 		ImGui::Separator();
 		//Infamy Bar
 		ImGui::Checkbox("Infamy Bar: Vertical", &_isVertical);
@@ -338,7 +338,7 @@ namespace InfamyHUD {
 		//Reputation
 		ImGui::SeparatorText("Reputation/Infamy");
 		ImGui::SliderInt("Reputation: Min Item Value to gain reputation", &_minItemValueForRep, 30, 400);
-		ImGui::SliderInt("Infamy: Hourly Infamy Decrease", &_hourlyInfamyDecrease, 1, 4);
+		ImGui::SliderInt("Infamy: Infamy Decrease", &_hourlyInfamyDecrease, 1, 10);
 		ImGui::SliderInt("Infamy: Item Value threshold to increase Infamy",&_minItemValueToIncreaseInfamy, 100, 600);
 		//Rputation perks
 		ImGui::SeparatorText("Reputation Perks");

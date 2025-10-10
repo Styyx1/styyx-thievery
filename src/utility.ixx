@@ -110,7 +110,7 @@ export struct Utility {
         const auto& gmstColl = RE::GameSettingCollection::GetSingleton();
         auto setting = gmstColl->GetSetting(a_setting);
         if (static_cast<int>(setting->GetFloat()) != static_cast<int>(new_value)) {            
-            REX::INFO("{}: {} -> {}", setting->GetName(), setting->GetFloat(), new_value);
+            REX::DEBUG("{}: {} -> {}", setting->GetName(), setting->GetFloat(), new_value);
             setting->data.f = new_value;
         }       
     }
