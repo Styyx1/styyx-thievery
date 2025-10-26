@@ -260,6 +260,12 @@ namespace InfamyHUD {
 
 	void InfamyHUDDisplay::DrawHUDElement(ImDrawList* draw_list, ImVec2& pos, ImVec2& size)
 	{
+		auto ui = RE::UI::GetSingleton();
+		if (ui->IsMenuOpen(RE::LoadingMenu::MENU_NAME) || ui->IsMenuOpen(RE::MainMenu::MENU_NAME)) {
+			ImGui::Dummy(size);
+			return;
+		}
+
 		if (_showMeter) {
 			float fraction = HeatFillPct();
 			if (IsVertical())
@@ -386,7 +392,8 @@ namespace InfamyHUD {
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = GetBarSize(_barHorSizeX, _barHorSizeY);
-		auto draw_list = ImGui::GetWindowDrawList();
+		auto draw_list = ImGui::GetWindowDrawList();				
+		
 		DrawHUDElement(draw_list, pos, size);
 		ImGui::End();
 

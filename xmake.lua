@@ -6,7 +6,7 @@ includes("lib/commonlibsse")
 
 -- set project
 set_project("styyx-thievery")
-set_version("1.0.0")
+set_version("1.1.0")
 set_license("GPL-3.0")
 
 -- set defaults
