@@ -74,7 +74,7 @@ namespace Papyrus {
 
 	void Functions::Bind(RE::BSScript::Internal::VirtualMachine& a_vm)
 	{
-		if (CurrentVersion >= API_VERSION::kVersion1) {
+		if constexpr (CurrentVersion >= API_VERSION::kVersion1) {
 			a_vm.RegisterFunction("GetVersion", script_name, GetVersion, true);
 			a_vm.RegisterFunction("GetRemainingLockpickTime", script_name, GetRemainingLockpickTime);
 			a_vm.RegisterFunction("GetRemainingPickpocketTime", script_name, GetRemainingPickpocketTime);
@@ -86,7 +86,7 @@ namespace Papyrus {
 			a_vm.RegisterFunction("IsSomethingOfValueHere", script_name, IsSomethingOfValueHere);
 			a_vm.RegisterFunction("DecreaseAllBounties", script_name, DecreaseAllBounties);
 		}
-		if (CurrentVersion >= API_VERSION::kVersion2) {
+		if constexpr (CurrentVersion >= API_VERSION::kVersion2) {
 			a_vm.RegisterFunction("ToggleInfamyWidget", script_name, ToggleWidget);
 		}
 

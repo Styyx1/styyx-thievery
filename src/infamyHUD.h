@@ -65,7 +65,7 @@ void __stdcall RenderOverlay();
 bool __stdcall OnInput(RE::InputEvent *event);
 void ChangeSizeAndReloadTexture(float newSize);
 void LoadBarIcon(const std::string &tex_path, float size);
-void DrawColoredIcon(ImDrawList *draw_list, ImVec2 &center, ImVec2 &texSize, float staminaPct);
+void DrawColoredIcon(ImDrawList *draw_list, ImVec2 &center, ImVec2 &texSize);
 inline bool IsEditorModeActive()
 {
     return InfamyBarData::GetSingleton()->GetIsEditMode();

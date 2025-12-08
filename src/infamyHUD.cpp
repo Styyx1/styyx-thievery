@@ -42,18 +42,8 @@ void __stdcall InfamyBar::RenderOverlay()
         REX::INFO("Loading texture from path: {}", texPath);
         LoadBarIcon(texPath, data->icon_size);
     }
-    auto player = RE::PlayerCharacter::GetSingleton();
-    auto ui = RE::UI::GetSingleton();
-    float staminaPct = 1.0f;
-    if (ui && player)
-    {
-        if (!ui->IsApplicationMenuOpen())
-        {
-            staminaPct = ActorUtil::GetActorValuePercentage(player, RE::ActorValue::kStamina);
-        }
-    }
-    // Calculate color based on stamina, this is only for testing until the heat function is implemented again
-    DrawColoredIcon(drawList, center, texSize, staminaPct);
+
+    DrawColoredIcon(drawList, center, texSize);
 }
 bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
 {
@@ -121,7 +111,7 @@ void InfamyBar::LoadBarIcon(const std::string &tex_path, float size)
     ImVec2 texSize(size, size);
     tex = SKSEMenuFramework::LoadTexture(tex_path, texSize);
 }
-void InfamyBar::DrawColoredIcon(ImDrawList *draw_list, ImVec2 &center, ImVec2 &texSize, float staminaPct)
+void InfamyBar::DrawColoredIcon(ImDrawList *draw_list, ImVec2 &center, ImVec2 &texSize)
 {
     float pct = HeatFillPct();
 
@@ -445,7 +435,7 @@ void __stdcall Menu::Settings::RenderSettings()
     };
 
     char buffer[256];
-    std::strncpy(buffer, Var::texture_name.c_str(), sizeof(buffer));
+    strncpy_s(buffer, Var::texture_name.c_str(), sizeof(buffer));
     if (ImGui::InputText(Label::texture_name.c_str(), buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue))
     {
         Var::texture_name = std::string(buffer);
@@ -467,7 +457,7 @@ void __stdcall Menu::Settings::RenderSettings()
                   set::gold_rush_shader_duration, Tool::gold_rush_shader_duration.c_str());
     
 	char notifBuffer[256];
-	std::strncpy(notifBuffer, Var::screen_notif_text.c_str(), sizeof(notifBuffer));
+    strncpy_s(notifBuffer, Var::screen_notif_text.c_str(), sizeof(notifBuffer));
 	if (ImGui::InputText("Gold Rush Notification Text", notifBuffer, sizeof(notifBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
     {
         Var::screen_notif_text = std::string(notifBuffer);
