@@ -1,4 +1,5 @@
 #include "papyrus.h"
+#include "infamyHUD.h"
 import Pickpocket;
 import lockpicking;
 import config;
@@ -64,6 +65,11 @@ namespace Papyrus {
 		Stealing::CrimeTracker::LowerAllBounties(a_amount);
 
 		REX::DEBUG("Decreased all bounties by {}", a_amount);
+	}
+
+	void Functions::ToggleWidget(SCRIPT_ARGS, bool enable)
+	{
+		InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->SetIsVisible(enable);
 	}
 
 	void Functions::Bind(RE::BSScript::Internal::VirtualMachine& a_vm)

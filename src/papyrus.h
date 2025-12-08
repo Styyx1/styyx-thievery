@@ -25,7 +25,8 @@ namespace Papyrus {
         bool GetIsLockpickTimerRunning(SCRIPT_ARGS);
         bool IsSomethingOfValueHere(SCRIPT_ARGS);
 		void DecreaseAllBounties(SCRIPT_ARGS, float a_amount);
-
+        //Version 2
+        void ToggleWidget(SCRIPT_ARGS, bool enable);
         
 
         //Register Function
