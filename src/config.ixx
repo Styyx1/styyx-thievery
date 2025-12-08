@@ -24,35 +24,29 @@ namespace Config
         static inline REX::TOML::Bool show_infamy_meter{ "Reputation.Settings", "bShowInfamyMeter", true };
         static inline REX::TOML::Bool enable_dynamic_lockpicking{ "Lockpicking.Settings", "bEnableDynamicLocks", true };
         // HUD Related Settings:
-        static inline REX::TOML::Bool is_bar_vertical{ "InfamyMeter.Settings", "bInfamyMeterVertical", false };
         static inline REX::TOML::F32 bar_pos_x{ "InfamyMeter.Settings", "fInfamyMeterPositionX", 500.0f };
         static inline REX::TOML::F32 bar_pos_y{ "InfamyMeter.Settings", "fInfamyMeterPositionY", 50.0f };
-        static inline REX::TOML::F32 bar_size_length{ "InfamyMeter.Settings","fInfamyBarLenght",200.0f };
-        static inline REX::TOML::F32 bar_size_width{ "InfamyMeter.Settings", "fInfamyBarWidth", 20.0f };
-        static inline REX::TOML::F32 editor_pos_x{ "InfamyMeter.Editor", "fEditorWindowPositionX", 100.0f };
-        static inline REX::TOML::F32 editor_pos_y{ "InfamyMeter.Editor", "fEditorWindowPositionY", 400.0f };
+		static inline REX::TOML::F32 icon_size{ "InfamyMeter.Settings", "fInfamyIconSize", 128.0f };
+		static inline REX::TOML::Str texture_name{ "InfamyMeter.Settings", "sInfamyMeterTexture", std::string("Flame.png") };	
+
 		 // Perk related settings
-        static inline REX::TOML::Bool show_gold_rush_screen{ "Reputation.Perks", "fShowGoldRushScreenEffect", true };
         static inline REX::TOML::Str screen_notif_text{ "Reputation.Perks", "sGoldRushScreenText", std::string("Something catches your eye...") };
 		static inline REX::TOML::Bool enable_gold_rush_sound{ "Reputation.Perks", "bEnableGoldRushSound", true };
 		static inline REX::TOML::F32 gold_rush_shader_duration{ "Reputation.Perks", "fGoldRushShaderDuration", 30.0f };
 
         // keybinds
-        static inline REX::TOML::Str editor_key{ "Keybinds", "sEnterEditMode", std::string("F8") };
+		static inline REX::TOML::U32 visibility_key{ "Keybinds", "uToggleVisibility", (uint32_t)66 }; // F8
 
-        void Update();
-        void Save();
+
+        void Update(bool a_save = false);
     };
-    inline void Settings::Update()
+    inline void Settings::Update(bool a_save)
     {
         auto toml = REX::TOML::SettingStore::GetSingleton();
         toml->Init(Constants::toml_path_default.data(), Constants::toml_path_custom.data());
-        toml->Load();
-    }
-
-    inline void Settings::Save() {
-        auto toml = REX::TOML::SettingStore::GetSingleton();
-        toml->Init(Constants::toml_path_default.data(), Constants::toml_path_custom.data());
-        toml->Save();
+        if(!a_save)
+            toml->Load();
+        else 
+			toml->Save();
     }
 }

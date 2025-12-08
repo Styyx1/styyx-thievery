@@ -193,7 +193,7 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 						REX::DEBUG("pickpocket success");					
 						close_actor->RemoveItem(random_item.first, random_item.second, RE::ITEM_REMOVE_REASON::kSteal, nullptr, a_player);
 						AddPickpocketExperience();
-						RE::DebugNotification(std::format("You successfully pickpocketed {} from {}.",random_item.first->GetName(),close_actor->GetName()).c_str());
+						RE::SendHUDMessage::ShowHUDMessage(std::format("You successfully pickpocketed {} from {}.",random_item.first->GetName(),close_actor->GetName()).c_str());
 					}
 					else {
 						REX::DEBUG("pickpocket failed");
@@ -298,7 +298,7 @@ void HeatSystem::DoCalculateDetection(RE::Actor* a_this, RE::Actor* target, std:
 {
 	_Hook10(a_this, target, score, spotted, hasLOS, reason, lastPos, soundLvl, unk8, unk9);	
 	if (Utility::IsGuardNearby(target, 512) && target->IsSneaking()) {
-		RE::DebugNotification("Your presence is noticed...");
+		RE::SendHUDMessage::ShowHUDMessage("Your presence is noticed...");
 		if (spotted) {
 			auto infamy = GetHeatValue();
 			if (infamy >= 90.0f && a_this->IsGuard()) {
@@ -353,11 +353,10 @@ RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorC
 			_foundStuff = true;
 			const auto& settings = Config::Settings::GetSingleton();
 			for(const auto& item : valuables)
-			{				
+			{			
 				item->ApplyEffectShader(forms->glow_shader, settings->gold_rush_shader_duration.GetValue());
-#ifdef ENABLE_DEBUGGING
 				REX::DEBUG("Found valuable item: {} in cell: {}", item->GetName(), cell->GetName());
-#endif
+
 			}		
 			const char* sound = nullptr;
 			if (settings->enable_gold_rush_sound.GetValue()) {
@@ -365,8 +364,8 @@ RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorC
 			}
 			std::jthread{ [=] {
 				std::this_thread::sleep_for(std::chrono::seconds(1));
-				SKSE::GetTaskInterface()->AddTask([=] {
-					RE::DebugNotification(settings->screen_notif_text.GetValue().c_str(), sound);
+				SKSE::GetTaskInterface()->AddTask([=] {					
+					RE::SendHUDMessage::ShowHUDMessage(settings->screen_notif_text.GetValue().c_str(), sound);
 					});
 				} }.detach();	
 		}		

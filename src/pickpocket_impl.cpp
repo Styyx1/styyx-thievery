@@ -104,7 +104,7 @@ bool PickpocketTimer::_PTimerEnabled = true;
 
 bool PickpocketTimer::IsPTimerEnabled()
 {
-	return _PTimerEnabled;
+	return Config::Settings::enable_pickpocket_timer.GetValue();
 }
 
 void PickpocketTimer::InitPickpocketCapChange()

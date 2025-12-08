@@ -34,7 +34,7 @@ bool LockpickingMenu::GetIsTimerRunning()
 
 bool LockpickingMenu::IsTimerEnabled()
 {
-	return _timerEnabled;
+	return Config::Settings::enable_lockpick_timer.GetValue();
 }
 
 static bool angle_adjusted = false;
