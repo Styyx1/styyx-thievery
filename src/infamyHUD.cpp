@@ -61,20 +61,17 @@ bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
 
     if (Menu::Settings::capture_key_input)
     {
-		REX::INFO("try to capture key input");
         for (auto e = event; e; e = e->next)
         {
             auto button = e->AsButtonEvent();
             if (!button || !button->HasIDCode())
                 continue;
 
-            // Only capture on key down
             if (!button->IsDown())
                 continue;
 
             uint32_t key = button->GetIDCode();
 
-            // Adjust mouse & gamepad codes exactly like your KeyCombination
             switch (button->GetDevice()) {
             case RE::INPUT_DEVICE::kMouse:
                 key += SKSE::InputMap::kMacro_MouseButtonOffset;
@@ -85,10 +82,7 @@ bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
             default:
                 break;
             }
-
-            Menu::Settings::Var::visibility_key = key;   // Transfer to UI
-			REX::INFO("Captured key code: {}", key);
-            //return true;           // Block input while capturing
+            Menu::Settings::Var::visibility_key = key;
         }
     }
 
@@ -187,7 +181,7 @@ ImU32 InfamyBar::GetBarColor(float fraction)
         color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     }
 
-    color.w = 0.9f; // Alpha
+    color.w = 0.9f; 
     return ImGui::ColorConvertFloat4ToU32(color);
 }
 
@@ -211,7 +205,6 @@ void RestoreFromSettings()
     using namespace Menu::Settings::Var;
     using set = Config::Settings;
 
-    // --- Core mechanics ---
     enable_lockpick_timer = set::enable_lockpick_timer.GetValue();
     enable_pickpocket_timer = set::enable_pickpocket_timer.GetValue();
     enable_dyn_pickpocket_cap = set::enable_dyn_pickpocket_cap.GetValue();
@@ -222,27 +215,21 @@ void RestoreFromSettings()
     lockpicking_min_time = set::lockpicking_min_time.GetValue();
     lockpicking_max_time = set::lockpicking_max_time.GetValue();
 
-    // --- Reputation settings ---
     reputation_min_item_value = set::reputation_min_item_value.GetValue();
     hourly_heat_decrease = set::hourly_heat_decrease.GetValue();
     fence_value_heat_threshold = set::fence_value_heat_threshold.GetValue();
     show_infamy_meter = set::show_infamy_meter.GetValue();
     enable_dynamic_lockpicking = set::enable_dynamic_lockpicking.GetValue();
     
-
-    // --- HUD / Infamy Meter ---
     bar_pos_x = set::bar_pos_x.GetValue();
     bar_pos_y = set::bar_pos_y.GetValue();
     icon_size = set::icon_size.GetValue();
-
     texture_name = set::texture_name.GetValue();
 
-    // --- Reputation Perks ---
     screen_notif_text = set::screen_notif_text.GetValue();
     enable_gold_rush_sound = set::enable_gold_rush_sound.GetValue();
     gold_rush_shader_duration = set::gold_rush_shader_duration.GetValue();
 
-    // --- Keybinds ---
     visibility_key = set::visibility_key.GetValue();
 }
 void RenderSystem()
@@ -314,12 +301,10 @@ void ResetDefaults()
     set::icon_size.SetValue(icon_size);
     set::texture_name.SetValue(texture_name);
 
-    // Perks
     set::screen_notif_text.SetValue(screen_notif_text);
     set::enable_gold_rush_sound.SetValue(enable_gold_rush_sound);
     set::gold_rush_shader_duration.SetValue(gold_rush_shader_duration);
 
-    // Keybind
     set::visibility_key.SetValue(visibility_key);
 
     set::GetSingleton()->Update(true);
@@ -332,6 +317,7 @@ void Menu::Settings::DrawHotkeyConfigUI()
 {
     std::string pattern = hotkeys::details::GetNameByKey(Config::Settings::visibility_key.GetValue()).data();
 
+    //not really needed but looks better in the menu
 	std::transform(pattern.begin(), pattern.end(), pattern.begin(), ::toupper);
 
     ImGui::Text(std::format("Hotkey: {}", pattern).c_str());
@@ -339,7 +325,6 @@ void Menu::Settings::DrawHotkeyConfigUI()
 
     if (!Menu::Settings::capture_key_input) {
         if (ImGui::Button("Rebind")) {
-			REX::INFO("Start capturing key input for rebinding");
             Menu::Settings::capture_key_input = true;
             Menu::Settings::Var::visibility_key = 0;
         }
@@ -357,14 +342,8 @@ void Menu::Settings::DrawHotkeyConfigUI()
 
     if (Menu::Settings::Var::visibility_key != 0)
     {
-        try {
-            auto name = clib_util::hotkeys::details::GetNameByKey(Menu::Settings::Var::visibility_key);
-            Config::Settings::visibility_key.SetValue(Menu::Settings::Var::visibility_key);
-            Menu::Settings::capture_key_input = false;
-        }
-        catch (...) {
-            Menu::Settings::capture_key_input = false;
-        }
+        Config::Settings::visibility_key.SetValue(Menu::Settings::Var::visibility_key);
+        Menu::Settings::capture_key_input = false;
     }
 }
 
@@ -437,9 +416,9 @@ void __stdcall Menu::Settings::RenderSettings()
     };
 
     // ---------------------------
-    // Sizing
+    // -----------Size------------
     // ---------------------------
-    ImGui::SeparatorText("Sizing");
+    ImGui::SeparatorText("Size");
 
     if (SettingSlider(Label::icon_size.c_str(), Var::icon_size, 32.0f, 512.0f, "%.0f px", set::icon_size,
                       Tool::icon_size.c_str()))
@@ -449,7 +428,7 @@ void __stdcall Menu::Settings::RenderSettings()
     };
 
     // ---------------------------
-    // Positioning
+    // --------Positioning--------
     // ---------------------------
     ImGui::SeparatorText("Position");
 
@@ -477,7 +456,7 @@ void __stdcall Menu::Settings::RenderSettings()
     ux::HelpMarker(Tool::texture_name.c_str());
 
     // ---------------------------
-    // VFX / SFX options
+    // --------Perk Options-------
     // ---------------------------
     ImGui::SeparatorText("Effects");
 
@@ -497,10 +476,11 @@ void __stdcall Menu::Settings::RenderSettings()
     ImGui::SameLine();
 	ux::HelpMarker(Tool::screen_notif_text.c_str());
 
+    //---------------------------
+    //Hotkey and Saving/Resetting
+    //---------------------------
     DrawHotkeyConfigUI();
-
     ImGui::NewLine();
-
     RenderSystem();
 
     FontAwesome::Pop();

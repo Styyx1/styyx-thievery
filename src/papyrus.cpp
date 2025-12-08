@@ -86,6 +86,10 @@ namespace Papyrus {
 			a_vm.RegisterFunction("IsSomethingOfValueHere", script_name, IsSomethingOfValueHere);
 			a_vm.RegisterFunction("DecreaseAllBounties", script_name, DecreaseAllBounties);
 		}
+		if (CurrentVersion >= API_VERSION::kVersion2) {
+			a_vm.RegisterFunction("ToggleInfamyWidget", script_name, ToggleWidget);
+		}
+
 		REX::INFO("Registered Papyrus functions for {}", script_name);
 	}
 	bool Register(RE::BSScript::Internal::VirtualMachine* a_vm)

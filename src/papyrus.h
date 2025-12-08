@@ -8,11 +8,13 @@ namespace Papyrus {
     enum class API_VERSION : int32_t
     {
         kVersion1 = 1,
+        kVersion2 = 2,
     };
 
     namespace Functions {
 
-        static constexpr API_VERSION CurrentVersion = API_VERSION::kVersion1;
+        static constexpr API_VERSION CurrentVersion = API_VERSION::kVersion2;
+
         static constexpr std::string_view script_name = "styyx_thieveryFunctions";
         //Version 1
         int GetVersion(SCRIPT_ARGS);
