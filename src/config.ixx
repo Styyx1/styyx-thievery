@@ -35,7 +35,7 @@ namespace Config
 		static inline REX::TOML::F32 gold_rush_shader_duration{ "Reputation.Perks", "fGoldRushShaderDuration", 30.0f };
 
         // keybinds
-		static inline REX::TOML::U32 visibility_key{ "Keybinds", "uToggleVisibility", (uint32_t)66 }; // F8
+        static inline REX::TOML::U32 visibility_key{ "Keybinds", "uToggleVisibility", uint32_t{66} }; // F8
 
 
         void Update(bool a_save = false);

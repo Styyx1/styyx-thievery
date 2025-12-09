@@ -103,7 +103,7 @@ void HeatSystem::UpdatePassiveHeatDecay() {
 			StartIngameHourTimer();
 		} else if (g_heat_decrease_timer.Elapsed() >= g_heat_decrease_timer.GetExpectedRuntime()) {
 			g_heat_decrease_timer.Reset();
-			DecreaseHeat(Config::Settings::hourly_heat_decrease.GetValue());
+			DecreaseHeat(static_cast<float>(Config::Settings::hourly_heat_decrease.GetValue()));
 			REX::DEBUG("Decrease heat over time");
 		}
 	} else {
@@ -189,7 +189,7 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 				if (random_item.first && random_item.second > 0 && !actor_pickpocketed.contains(close_actor)) {
 					actor_pickpocketed.insert(close_actor);
 					REX::DEBUG("attempting to pickpocket item: {} with amount: {}", random_item.first->GetName(), random_item.second);
-					if (Randomiser::GetRandomFloat(0.0f, 100.0f) < GetRandomPickpocketChance(a_player->GetActorValue(RE::ActorValue::kPickpocket), GetHeatValue(), Stealing::NightThief::GetNightReputation())) {
+					if (Randomiser::GetRandomFloat(0.0f, 100.0f) < GetRandomPickpocketChance(a_player->GetActorValue(RE::ActorValue::kPickpocket), GetHeatValue(), static_cast<float>(Stealing::NightThief::GetNightReputation()))) {
 						REX::DEBUG("pickpocket success");					
 						close_actor->RemoveItem(random_item.first, random_item.second, RE::ITEM_REMOVE_REASON::kSteal, nullptr, a_player);
 						AddPickpocketExperience();
@@ -461,7 +461,6 @@ std::vector<RE::TESObjectREFR*> ReputationPerkHandler::GetValuablesInCell(RE::TE
 	po3Timer.start();	
 #endif
 	std::vector<RE::TESObjectREFR*> valuables;
-	bool found_item = false;
 	static const auto& settings = Config::Settings::GetSingleton();
 	a_cell->ForEachReference([this, &valuables](RE::TESObjectREFR* ref) {	
 		auto base = ref->GetBaseObject();

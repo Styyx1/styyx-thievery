@@ -301,16 +301,14 @@ void ResetDefaults()
 }
 } // namespace Menu
 
-
-
 void Menu::Settings::DrawHotkeyConfigUI()
 {
-    std::string pattern = hotkeys::details::GetNameByKey(Config::Settings::visibility_key.GetValue()).data();
+    std::string key_name = hotkeys::details::GetNameByKey(Config::Settings::visibility_key.GetValue()).data();
 
     //not really needed but looks better in the menu
-	std::transform(pattern.begin(), pattern.end(), pattern.begin(), ::toupper);
+	std::transform(key_name.begin(), key_name.end(), key_name.begin(), ::toupper);
 
-    ImGui::Text(std::format("Hotkey: {}", pattern).c_str());
+    ImGui::Text(std::format("Hotkey: {}", key_name).c_str());
     ImGui::SameLine();
 
     if (!Menu::Settings::capture_key_input) {
@@ -329,14 +327,12 @@ void Menu::Settings::DrawHotkeyConfigUI()
 			Settings::Var::visibility_key = Config::Settings::visibility_key.GetValue();
         }
     }
-
     if (Menu::Settings::Var::visibility_key != 0)
     {
         Config::Settings::visibility_key.SetValue(Menu::Settings::Var::visibility_key);
         Menu::Settings::capture_key_input = false;
     }
 }
-
 void __stdcall Menu::Settings::RenderSettings()
 {
     using set = Config::Settings;
