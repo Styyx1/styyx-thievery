@@ -39,7 +39,7 @@ void __stdcall InfamyBar::RenderOverlay()
     if (!tex)
     {
         const std::string texPath = data->tex_path_folder + Config::Settings::texture_name.GetValue();
-        REX::INFO("Loading texture from path: {}", texPath);
+        REX::DEBUG("Loading texture from path: {}", texPath);
         LoadBarIcon(texPath, data->icon_size);
     }
 
