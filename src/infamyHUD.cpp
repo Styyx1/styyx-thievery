@@ -49,7 +49,7 @@ bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
 {
     bool blockThisUserInput = false;
 
-    if (Menu::Settings::capture_key_input)
+    /*if (Menu::Settings::capture_key_input)
     {
         for (auto e = event; e; e = e->next)
         {
@@ -74,12 +74,18 @@ bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
             }
             Menu::Settings::Var::visibility_key = key;
         }
-    }
+    }*/
 
     if (event->device == RE::INPUT_DEVICE::kKeyboard)
     {
         if (auto button = event->AsButtonEvent())
         {
+            if (Menu::Settings::capture_key_input) {
+                if (button->IsDown()) {
+					Menu::Settings::Var::visibility_key = button->GetIDCode();
+                }
+            }
+
             if (button->GetIDCode() == Config::Settings::visibility_key.GetValue() && button->IsDown())
             {
                 bool isVisible = InfamyBarData::GetSingleton()->GetIsVisible();
