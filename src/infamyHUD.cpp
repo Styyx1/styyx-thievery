@@ -48,34 +48,7 @@ void __stdcall InfamyBar::RenderOverlay()
 bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
 {
     bool blockThisUserInput = false;
-
-    /*if (Menu::Settings::capture_key_input)
-    {
-        for (auto e = event; e; e = e->next)
-        {
-            auto button = e->AsButtonEvent();
-            if (!button || !button->HasIDCode())
-                continue;
-
-            if (!button->IsDown())
-                continue;
-
-            uint32_t key = button->GetIDCode();
-
-            switch (button->GetDevice()) {
-            case RE::INPUT_DEVICE::kMouse:
-                key += SKSE::InputMap::kMacro_MouseButtonOffset;
-                break;
-            case RE::INPUT_DEVICE::kGamepad:
-                key = SKSE::InputMap::GamepadMaskToKeycode(key);
-                break;
-            default:
-                break;
-            }
-            Menu::Settings::Var::visibility_key = key;
-        }
-    }*/
-
+    
     if (event->device == RE::INPUT_DEVICE::kKeyboard)
     {
         if (auto button = event->AsButtonEvent())
