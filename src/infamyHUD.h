@@ -55,10 +55,6 @@ struct InfamyBarData : REX::Singleton<InfamyBarData>
     bool isInitialized = false;
 };
 
-struct InfamyBarRenderer : public REX::Singleton<InfamyBarRenderer>
-{
-};
-
 static inline ImTextureID tex = nullptr;
 void RegisterInfamyBar();
 void __stdcall RenderOverlay();

@@ -63,6 +63,7 @@ bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
             {
                 bool isVisible = InfamyBarData::GetSingleton()->GetIsVisible();
                 InfamyBarData::GetSingleton()->SetIsVisible(!isVisible);
+                
             }
         }
     }
@@ -101,7 +102,8 @@ void InfamyBar::DrawColoredIcon(ImDrawList *draw_list, ImVec2 &center, ImVec2 &t
 
     ImVec2 uv10(0.0f, 0.0f);
     ImVec2 uv11(1.0f, 1.0f);
-    if (InfamyBarData::GetSingleton()->GetIsVisible())
+
+    if (InfamyBarData::GetSingleton()->GetIsVisible() && !RE::UI::GetSingleton()->IsApplicationMenuOpen())
         ImGui::ImDrawListManager::AddImage(draw_list, tex, full0, full1, uv10, uv11, barColor);
 }
 
@@ -238,9 +240,9 @@ void ResetDefaults()
     show_infamy_meter = true;
     enable_dynamic_lockpicking = true;
 
-    bar_pos_x = 500.0f;
-    bar_pos_y = 50.0f;
-    icon_size = 128.f;
+    bar_pos_x = 655.0f;
+    bar_pos_y = 55.0f;
+    icon_size = 50.f;
     texture_name = "Flame.png";
 
     screen_notif_text = "Something catches your eye...";
@@ -275,6 +277,10 @@ void ResetDefaults()
     set::gold_rush_shader_duration.SetValue(gold_rush_shader_duration);
 
     set::visibility_key.SetValue(visibility_key);
+    InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->pos_y = bar_pos_y;
+    InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->pos_x = bar_pos_x;
+    InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->icon_size = icon_size;
+    InfamyHUD::InfamyBar::ChangeSizeAndReloadTexture(set::icon_size.GetValue());
 
     set::GetSingleton()->Update(true);
 }
@@ -450,4 +456,5 @@ void __stdcall Menu::Settings::RenderSettings()
 
     FontAwesome::Pop();
 }
+
 

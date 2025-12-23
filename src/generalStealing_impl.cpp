@@ -138,7 +138,6 @@ namespace Stealing {
 		}
 
 		_Hook3(a_this, a_faction, a_violent, a_amount);
-		REX::DEBUG("info dump: actor is: {}, faction is: {}, violent crime bool is: {}, amount is: {}", a_this->GetName(), a_faction->GetName(), a_violent ? "true" : "false", a_amount);
 		if (a_amount > 0 && !a_violent) {
 			DecreaseReputation(0.2f); // decrease your thief reputation when you are getting caught.
 			CalculateReputationLootChance();
