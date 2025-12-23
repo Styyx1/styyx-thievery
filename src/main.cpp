@@ -34,7 +34,6 @@ void InitListener(SKSE::MessagingInterface::Message* a_msg) {
 	default:
 		break;
 	}
-
 }
 
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* a_skse)

@@ -70,13 +70,31 @@ bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
     return blockThisUserInput;
 }
 
+std::string InfamyBar::NormalizeTextureName(std::string name)
+{
+    if (name.empty()) {
+        return {};
+    }
+
+    auto slash_pos = name.find_last_of("/\\");
+    auto dot_pos = name.find_last_of('.');
+
+    if (dot_pos == std::string::npos ||
+        (slash_pos != std::string::npos && dot_pos < slash_pos)) {
+        name += ".png";
+    }
+
+    return name;
+}
+
 void InfamyBar::ChangeSizeAndReloadTexture(float newSize)
 {
     Config::Settings::icon_size.SetValue(newSize);
     ImVec2 texSize(newSize, newSize);
     // Reload texture with new size
     InfamyBarData *data = InfamyBarData::GetSingleton();
-    std::string path = data->tex_path_folder + Config::Settings::texture_name.GetValue();
+    std::string tex_name = NormalizeTextureName(Config::Settings::texture_name.GetValue());
+    std::string path = data->tex_path_folder + tex_name;
     tex = SKSEMenuFramework::LoadTexture(path, texSize);
     if (!tex)
     {
@@ -456,5 +474,4 @@ void __stdcall Menu::Settings::RenderSettings()
 
     FontAwesome::Pop();
 }
-
 
