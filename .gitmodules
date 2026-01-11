@@ -1,9 +1,9 @@
 [submodule "lib/commonlibsse"]
 	path = lib/commonlibsse
 	url = https://github.com/libxse/commonlibsse.git
-[submodule "extern/ImGUI"]
-	path = extern/ImGUI
-	url = https://github.com/ocornut/imgui
 [submodule "extern/clibutil"]
 	path = extern/clibutil
 	url = https://github.com/powerof3/CLibUtil
+[submodule "extern/styyx-utils"]
+	path = extern/styyx-utils
+	url = https://github.com/Styyx1/StyyxUtils

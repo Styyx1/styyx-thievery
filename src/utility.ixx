@@ -97,7 +97,6 @@ export struct Utility {
                 get_actor_within_radius(actor.get());
             }
         }
-        REX::DEBUG("Guard is nearby: {}", result ? "true" : "false");
         return result;
     }
 

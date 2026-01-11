@@ -1,471 +1,477 @@
 #include "infamyHUD.h"
 #include "formloader.h"
 #include <dxgi.h>
-import inputhandler;
-import config;
+
 import heat;
 import generalStealing;
 import lockpicking;
 import Pickpocket;
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam); 
-
-namespace InfamyHUD {
-
-	static InfamyHUDDisplay* g_infamyHUDMenu = nullptr;
-
-	void Renderer::Present(uint32_t a1)
-	{
-		if (ImGui::GetCurrentContext()) {
-			ImGui_ImplDX11_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-			if(!g_infamyHUDMenu)
-				g_infamyHUDMenu = InfamyHUDDisplay::GetSingleton();
-
-			g_infamyHUDMenu->Draw();
-
-			ImGui::Render();
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-		}
-		else {
-			REX::DEBUG("no imgui context found");
-		}
-		_Hook11(a1);
-	}
-
-	void SwapChainHook::RendererInit()
-	{
-		_Hook12();  // call original
-		if (!bInitialized) {
-			const auto settings = Config::Settings::GetSingleton();
-			auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-			if(!g_infamyHUDMenu)
-				g_infamyHUDMenu = InfamyHUDDisplay::GetSingleton();
-			if (!renderer) {
-				REX::ERROR("Renderer not found!");
-				return;
-			}
-
-			auto swapChain = (IDXGISwapChain*)renderer->data.renderWindows[0].swapChain;
-			if (!swapChain) {
-				REX::ERROR("SwapChain not found!");
-				return;
-			}
-
-			DXGI_SWAP_CHAIN_DESC desc{};
-			if (FAILED(swapChain->GetDesc(&desc))) {
-				REX::ERROR("SwapChain::GetDesc failed");
-				return;
-			}
-
-			const auto device = reinterpret_cast<ID3D11Device*>(renderer->data.forwarder);
-			const auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->data.context);
-
-			ImGui::CreateContext();
-
-			if (!bStyleApplied) {
-				ApplyHUDStyle();
-				REX::DEBUG("applied HUD style");
-				bStyleApplied = true;
-			}
-
-			auto& io = ImGui::GetIO();
-			io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad | ImGuiConfigFlags_NavEnableSetMousePos;
-			io.IniFilename = nullptr;
-
-			if (!ImGui_ImplWin32_Init(desc.OutputWindow)) {
-				REX::ERROR("ImGui Win32 init failed");
-				return;
-			}
-			if (!ImGui_ImplDX11_Init(device, context)) {
-				REX::ERROR("ImGui DX11 init failed");
-				return;
-			}
-			REX::INFO("ImGui initialized.");
-			bInitialized = true;
-
-			WndProc::func = reinterpret_cast<WNDPROC>(
-				SetWindowLongPtrA(
-					desc.OutputWindow,
-					GWLP_WNDPROC,
-					reinterpret_cast<LONG_PTR>(WndProc::thunk)));
-			if (!WndProc::func) {
-				REX::ERROR("SetWindowLongPtrA failed!");
-			}
-		}
-	}
-
-	void SwapChainHook::ApplyHUDStyle()
-	{
-		ImGuiStyle& style = ImGui::GetStyle();
-		style.WindowRounding = 5.0f;
-		style.WindowBorderSize = 1.0f;
-		style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.3f);  
-		style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 0.9f, 0.7f, 1.0f);
-		style.Colors[ImGuiCol_Border] = ImVec4(1.0f, 0.9f, 0.7f, 0.0f);
-		style.WindowPadding = ImVec2(8, 6);
-		style.FramePadding = ImVec2(4, 2);
-		style.ItemSpacing = ImVec2(6, 4);
-		style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-		style.AntiAliasedFill = true;
-		style.AntiAliasedLines = true;
-	}
-
-	bool InfamyHUDDisplay::IsEditorModeActive() const
-	{
-		return _isEditorModeActive;
-	}
-
-	bool InfamyHUDDisplay::FocusRegained()
-	{
-		return false;
-	}
-
-	void InfamyHUDDisplay::SetEditorMode(bool enable)
-	{
-		_isEditorModeActive = enable;
-	}
-
-	bool InfamyHUDDisplay::FocusLost()
-	{
-		return false;
-	}
-
-	void InfamyHUDDisplay::DrawVerticalBar(ImDrawList* draw_list, ImVec2& pos, ImVec2& size, float fraction) {
-		draw_list->AddRectFilled(ImVec2(pos.x - 5, pos.y - 5), ImVec2(pos.x + size.x + 5, pos.y + size.y + 5), IM_COL32(30, 30, 30, 180), 0); // Background 
-		if (fraction > 0.0f) {
-			float fillTopY = pos.y + size.y * (1.0f - fraction);
-			draw_list->AddRectFilled(
-				ImVec2(pos.x, fillTopY),
-				ImVec2(pos.x + size.x, pos.y + size.y),
-				GetBarColor(fraction),
-				0.0f
-			);
-		}		
-		draw_list->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(235,235,235,255), 0, 3);
-	}
-
-	void InfamyHUDDisplay::DrawHorizontalBar(ImDrawList* draw_list, ImVec2& pos, ImVec2& size, float fraction)
-	{
-		draw_list->AddRectFilled(ImVec2(pos.x - 5, pos.y - 5), ImVec2(pos.x + size.x + 5, pos.y + size.y + 5), IM_COL32(30, 30, 30, 180), 0); // Background 
-		if (fraction > 0.0f) {
-				draw_list->AddRectFilled(pos, ImVec2(pos.x + size.x * fraction, pos.y + size.y),GetBarColor(fraction),0.0f);
-		}		
-		draw_list->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(235,235,235,255), 0, 3);
-	}
-
-	bool InfamyHUDDisplay::IsVertical() const
-	{
-		return _isVertical;
-	}
-
-	void InfamyHUDDisplay::SetIsVertical(bool set)
-	{ 
-		_isVertical = set; 
-	}
-
-	ImVec2 InfamyHUDDisplay::GetBarSize(float sizeHorizontalX, float sizeHorizontalY) const
-	{
-		return IsVertical() ? ImVec2(sizeHorizontalY, sizeHorizontalX) : ImVec2(sizeHorizontalX, sizeHorizontalY);		
-	}
-
-	void InfamyHUDDisplay::ToggleEditorMode()
-	{
-		_isEditorModeActive = !_isEditorModeActive;
-		auto cmp = RE::ControlMap::GetSingleton();
-		if (cmp) {
-			cmp->ignoreKeyboardMouse = _isEditorModeActive;
-		}
-		if (!_isEditorModeActive) {
-			SaveAllSettings();
-			REX::INFO("Editor settings saved.");
-		}			
-	}
-
-	void InfamyHUDDisplay::InitSettings()
-	{
-		if (!_settingsInitialised) {
-			const auto& config = Config::Settings::GetSingleton();
-			_barPosX = config->bar_pos_x.GetValue();
-			_barPosY = config->bar_pos_y.GetValue();
-			_barHorSizeX = config->bar_size_length.GetValue();
-			_barHorSizeY = config->bar_size_width.GetValue();
-			_isVertical = config->is_bar_vertical.GetValue();
-			_editorPosX = config->editor_pos_x.GetValue();
-			_editorPosY = config->editor_pos_y.GetValue();
-			_showMeter = config->show_infamy_meter.GetValue();
-			//Thievery
-			PickpocketTimer::_PTimerEnabled = (config->enable_pickpocket_timer.GetValue());
-			LockpickingMenu::_timerEnabled = config->enable_lockpick_timer.GetValue();
-			_pickpocketMinTime = config->pickpocket_min_time.GetValue();
-			_pickpocketMaxTime = config->pickpocket_max_time.GetValue();
-			_lockpickMaxTime = config->lockpicking_max_time.GetValue();
-			_lockpickMinTime = config->lockpicking_min_time.GetValue();
-			_lockpickConsequence = config->remove_lockpick_on_timeout.GetValue();
-			_dynamicPickpocketEnable = config->enable_dyn_pickpocket_cap.GetValue();
-			_dynamicLockpickEnable = config->enable_dynamic_lockpicking.GetValue();
-			//Infamy/Reputation
-			_minItemValueForRep = config->reputation_min_item_value.GetValue();
-			_minItemValueToIncreaseInfamy = config->fence_value_heat_threshold.GetValue();
-			_hourlyInfamyDecrease = config->hourly_heat_decrease.GetValue();
-			//Reputation perks
-			_goldRushNotifText = config->screen_notif_text.GetValue();
-			_goldRushScreen = config->show_gold_rush_screen.GetValue();
-			_goldRushShaderDuration = config->gold_rush_shader_duration.GetValue();
-			_goldRushSoundEnabled = config->enable_gold_rush_sound.GetValue();			
+#undef ERROR
 
 
 
-			_settingsInitialised = true;
+namespace InfamyHUD
+{
 
-		}
-	}
-
-	void InfamyHUDDisplay::SaveAllSettings() const
-	{
-		const auto& config = Config::Settings::GetSingleton();
-
-		config->editor_pos_x.SetValue(_editorPosX);
-		config->editor_pos_y.SetValue(_editorPosY);
-		config->is_bar_vertical.SetValue(_isVertical);
-		config->bar_pos_x.SetValue(_barPosX);
-		config->bar_pos_y.SetValue(_barPosY);
-		config->bar_size_length.SetValue(_barHorSizeX);
-		config->bar_size_width.SetValue(_barHorSizeY);
-		config->show_infamy_meter.SetValue(_showMeter);
-		//lockpicking
-		config->enable_lockpick_timer.SetValue(LockpickingMenu::_timerEnabled);
-		config->remove_lockpick_on_timeout.SetValue(_lockpickConsequence);
-		config->lockpicking_min_time.SetValue(_lockpickMinTime);
-		config->lockpicking_max_time.SetValue(_lockpickMaxTime);
-		config->enable_dynamic_lockpicking.SetValue(_dynamicLockpickEnable);
-		//pickpocket
-		config->enable_pickpocket_timer.SetValue(PickpocketTimer::_PTimerEnabled);
-		config->pickpocket_min_time.SetValue(_pickpocketMinTime);
-		config->pickpocket_max_time.SetValue(_pickpocketMaxTime);
-		config->enable_dyn_pickpocket_cap.SetValue(_dynamicPickpocketEnable);
-		//Infamy/Reputation
-		config->reputation_min_item_value.SetValue(_minItemValueForRep);
-		config->fence_value_heat_threshold.SetValue(_minItemValueToIncreaseInfamy);
-		config->hourly_heat_decrease.SetValue(_hourlyInfamyDecrease);
-		//Reputation perks
-		config->show_gold_rush_screen.SetValue(_goldRushScreen);
-		config->screen_notif_text.SetValue(_goldRushNotifText);
-		config->gold_rush_shader_duration.SetValue(_goldRushShaderDuration);
-		config->enable_gold_rush_sound.SetValue(_goldRushSoundEnabled);
-
-		config->Save();
-	}
-
-	void InfamyHUDDisplay::DrawHUDElement(ImDrawList* draw_list, ImVec2& pos, ImVec2& size)
-	{
-		auto ui = RE::UI::GetSingleton();
-		if (ui->IsMenuOpen(RE::LoadingMenu::MENU_NAME) || ui->IsMenuOpen(RE::MainMenu::MENU_NAME)) {
-			ImGui::Dummy(size);
-			return;
-		}
-
-		if (_showMeter) {
-			float fraction = HeatFillPct();
-			if (IsVertical())
-				DrawVerticalBar(draw_list, pos, size, fraction);
-			else
-				DrawHorizontalBar(draw_list, pos, size, fraction);
-			// move cursor to avoid overlapping with next element
-			ImGui::Dummy(size);
-		}		
-	}
-
-	void InfamyHUDDisplay::DrawEditor()
-	{
-		auto& io = ImGui::GetIO();
-		io.ConfigWindowsMoveFromTitleBarOnly = false;
-		ImGui::SetNextFrameWantCaptureMouse(true);
-		ImGui::SetNextFrameWantCaptureKeyboard(true);
-		if(!ImGui::IsWindowFocused())
-			ImGui::SetNextWindowFocus();
-
-		io.MouseDrawCursor = true;
-		io.AddMouseButtonEvent(0, (GetKeyState(VK_LBUTTON) & 0x80) != 0);
-
-		
-
-		ImGui::SetNextWindowPos(ImVec2(_editorPosX, _editorPosY), ImGuiCond_Always);
-		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize;
-
-		ImGui::Begin("StyyxThieveryEditor", nullptr, windowFlags);
-
-		// move only if this window is hovered and mouse is down
-		if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(0)) {
-			_editorPosX += io.MouseDelta.x;
-			_editorPosY += io.MouseDelta.y;
-		}
-		
-
-		ImVec2 pos = ImGui::GetCursorScreenPos();
-		auto draw_list = ImGui::GetWindowDrawList();
-		//title
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 6));
-		ImGui::PushItemWidth(300.0f);
-		ImGui::Separator();
-		ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.1f, 1.0f), "Fortunes and Real Troubles");
-		ImGui::Separator();
-		//Infamy Bar
-		ImGui::Checkbox("Infamy Bar: Vertical", &_isVertical);
-		ImGui::SameLine();
-		ImGui::Checkbox("Infamy Bar: Show Meter", &_showMeter);
-		ImGui::SliderFloat("Infamy Bar: Length", &_barHorSizeX, 50.0f, 400.0f);
-		ImGui::SliderFloat("infamy Bar: Width", &_barHorSizeY, 10.0f, 50.0f);
-		ImGui::Separator();
-		ImGui::Text("Thievery Settings");
-		//Lockpicking
-		ImGui::SeparatorText("Lockpicking");
-		ImGui::Checkbox("Lockpicking: Timer Toggle", &LockpickingMenu::_timerEnabled);
-		ImGui::SameLine();
-		ImGui::Checkbox("Lockpicking: Remove Lockpick on Fail", &_lockpickConsequence);
-		ImGui::SameLine();
-		ImGui::Checkbox("Lockpicking: Toggle dynamic lockpicking", &_dynamicLockpickEnable);
-		ImGui::SliderFloat("Lockpicking: Minimum Time", &_lockpickMinTime, 5.0f, 30.0f);
-		ImGui::SliderFloat("Lockpicking: Maximum Time", &_lockpickMaxTime, 31.0f, 120.0f);
-		//Pickpocketing
-		ImGui::SeparatorText("Pickpocketing");
-		ImGui::Checkbox("Pickpocket: Timer Toggle", &PickpocketTimer::_PTimerEnabled);
-		ImGui::SameLine();
-		if (ImGui::Checkbox("Pickpocket: Toggle Dynamic Pickpocketing", &_dynamicPickpocketEnable)) {
-			if(!_dynamicPickpocketEnable)
-				PickpocketTimer::ResetPickpocketChance();
-			else {
-				PickpocketTimer::InitPickpocketCapChange();
-			}
-		}
-		ImGui::SliderFloat("Pickpocket: Minimum Time", &_pickpocketMinTime, 5.0f, 30.0f);
-		ImGui::SliderFloat("Pickpocket: Maximum Time", &_pickpocketMaxTime, 31.0f, 120.0f);
-		//Reputation
-		ImGui::SeparatorText("Reputation/Infamy");
-		ImGui::SliderInt("Reputation: Min Item Value to gain reputation", &_minItemValueForRep, 30, 400);
-		ImGui::SliderInt("Infamy: Infamy Decrease", &_hourlyInfamyDecrease, 1, 10);
-		ImGui::SliderInt("Infamy: Item Value threshold to increase Infamy",&_minItemValueToIncreaseInfamy, 100, 600);
-		//Rputation perks
-		ImGui::SeparatorText("Reputation Perks");
-		ImGui::Checkbox("Gold Rush: Sound Effect Toggle", &_goldRushSoundEnabled);
-		ImGui::SliderFloat("Gold Rush: Shader Duration", &_goldRushShaderDuration, 1.0f, 240.0f, "%.0f");
-
-		//end
-		ImGui::PopItemWidth();
-		ImGui::PopStyleVar();
-
-		ImGui::End();
-	}
-
-	void InfamyHUDDisplay::Draw()
-	{	
-		InitSettings();
-		auto& io = ImGui::GetIO();
-		io.ConfigWindowsMoveFromTitleBarOnly = !_isEditorModeActive;
-		//_isEditorModeActive = true;
-		if (IsEditorModeActive()) {
-			io.MouseDrawCursor = true;
-			io.AddMouseButtonEvent(0, (GetKeyState(VK_LBUTTON) & 0x80) != 0);
-		}
-		else {
-			io.MouseDrawCursor = false;
-		}
-
-		ImGui::SetNextWindowPos(ImVec2(_barPosX, _barPosY), ImGuiCond_Always);
-		ImGui::SetNextWindowBgAlpha(0.0f); 		
-
-		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar;
-		if (!_isEditorModeActive) {
-			windowFlags |= ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar;
-		} else {
-			windowFlags |=  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
-		}
-		
-		ImGui::Begin("InfamyHUD", nullptr, windowFlags);
-
-		// move only if this window is hovered and mouse is down
-		if (_isEditorModeActive && ImGui::IsWindowHovered() && ImGui::IsMouseDown(0)) {
-			_barPosX += io.MouseDelta.x;
-			_barPosY += io.MouseDelta.y;
-		}
-
-		ImVec2 pos = ImGui::GetCursorScreenPos();
-		ImVec2 size = GetBarSize(_barHorSizeX, _barHorSizeY);
-		auto draw_list = ImGui::GetWindowDrawList();				
-		
-		DrawHUDElement(draw_list, pos, size);
-		ImGui::End();
-
-		if (IsEditorModeActive()) {
-			DrawEditor();
-		}
-	}
-
-	float InfamyHUDDisplay::HeatFillPct()
-	{
-		float ret_val = 0.5f;
-		const auto& formL = FormLoader::Loader::GetSingleton();
-		if (formL->player_heat_system_global) {
-			ret_val = std::clamp(HeatSystem::GetHeatValue() / 100.0f, 0.0f, 100.0f);
-		}
-		return ret_val;
-	}
-
-	ImU32 InfamyHUDDisplay::GetBarColor(float fraction)
-	{
-		ImVec4 color;
-
-		if (fraction <= 0.5f) {
-			// Blue -> Yellow
-			float t = fraction / 0.5f;
-			color.x = (1.0f - t) * 0.0f + t * 1.0f; // R
-			color.y = (1.0f - t) * 0.0f + t * 1.0f; // G
-			color.z = (1.0f - t) * 1.0f + t * 0.0f; // B
-		}
-		else if (fraction <= 0.7f) {
-			// Yellow -> Orange
-			float t = (fraction - 0.5f) / 0.2f;
-			color.x = (1.0f - t) * 1.0f + t * 1.0f; // R
-			color.y = (1.0f - t) * 1.0f + t * 0.5f; // G
-			color.z = (1.0f - t) * 0.0f + t * 0.0f; // B
-		}
-		else if (fraction <= 0.9f) {
-			// Orange -> Red
-			float t = (fraction - 0.7f) / 0.2f;
-			color.x = 1.0f;
-			color.y = (1.0f - t) * 0.5f + t * 0.0f;
-			color.z = 0.0f;
-		}
-		else {
-			// Max Red
-			color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-		}
-
-		color.w = 0.9f; // Alpha
-		return ImGui::ColorConvertFloat4ToU32(color);
-	}
-
-	LRESULT WndProc::thunk(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		if(!g_infamyHUDMenu)
-			g_infamyHUDMenu = InfamyHUDDisplay::GetSingleton();
-		if (g_infamyHUDMenu->IsEditorModeActive()) {
-			ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);				
-			return true;				
-
-		}
-		if (uMsg == WM_SETFOCUS) {
-			g_infamyHUDMenu->FocusRegained();
-			const auto& inputHandler = InputManager::GetSingleton();
-			inputHandler->SetEditorKey();
-		}
-
-		if (uMsg == WM_KILLFOCUS) {
-			g_infamyHUDMenu->SetEditorMode(false);
-			g_infamyHUDMenu->FocusLost();
-		}
-
-		return func(hWnd, uMsg, wParam, lParam);
-	}
+void InfamyBar::RegisterInfamyBar()
+{
+    if (!SKSEMenuFramework::IsInstalled())
+    {
+        return;
+    }
+    SKSEMenuFramework::AddHudElement(InfamyHUD::InfamyBar::RenderOverlay);
+    SKSEMenuFramework::AddInputEvent(InfamyHUD::InfamyBar::OnInput);
 }
+// Runs every frame to render the overlay
+void __stdcall InfamyBar::RenderOverlay()
+{
+    /*if (SKSEMenuFramework::IsAnyBlockingWindowOpened())
+        return;*/
+    InfamyBarData *data = InfamyBarData::GetSingleton();
+    data->InitData();
+
+    auto drawList = ImGui::GetForegroundDrawList();
+
+    ImVec2 center = ImVec2(data->pos_x, data->pos_y);
+    ImVec2 texSize(data->icon_size, data->icon_size);
+    // Load texture if not already loaded
+    if (!tex)
+    {
+        const std::string texPath = data->tex_path_folder + Config::Settings::texture_name.GetValue();
+        REX::DEBUG("Loading texture from path: {}", texPath);
+        LoadBarIcon(texPath, data->icon_size);
+    }
+
+    DrawColoredIcon(drawList, center, texSize);
+}
+bool __stdcall InfamyBar::OnInput(RE::InputEvent *event)
+{
+    bool blockThisUserInput = false;
+    
+    if (event->device == RE::INPUT_DEVICE::kKeyboard)
+    {
+        if (auto button = event->AsButtonEvent())
+        {
+            if (Menu::Settings::capture_key_input) {
+                if (button->IsDown()) {
+					Menu::Settings::Var::visibility_key = button->GetIDCode();
+                }
+            }
+
+            if (button->GetIDCode() == Config::Settings::visibility_key.GetValue() && button->IsDown())
+            {
+                bool isVisible = InfamyBarData::GetSingleton()->GetIsVisible();
+                InfamyBarData::GetSingleton()->SetIsVisible(!isVisible);
+                
+            }
+        }
+    }
+    return blockThisUserInput;
+}
+
+std::string InfamyBar::NormalizeTextureName(std::string name)
+{
+    if (name.empty()) {
+        return {};
+    }
+
+    auto slash_pos = name.find_last_of("/\\");
+    auto dot_pos = name.find_last_of('.');
+
+    if (dot_pos == std::string::npos ||
+        (slash_pos != std::string::npos && dot_pos < slash_pos)) {
+        name += ".png";
+    }
+
+    return name;
+}
+
+void InfamyBar::ChangeSizeAndReloadTexture(float newSize)
+{
+    Config::Settings::icon_size.SetValue(newSize);
+    ImVec2 texSize(newSize, newSize);
+    // Reload texture with new size
+    InfamyBarData *data = InfamyBarData::GetSingleton();
+    std::string tex_name = NormalizeTextureName(Config::Settings::texture_name.GetValue());
+    std::string path = data->tex_path_folder + tex_name;
+    tex = SKSEMenuFramework::LoadTexture(path, texSize);
+    if (!tex)
+    {
+        path = FALLBACK;
+        tex = SKSEMenuFramework::LoadTexture(path, texSize);
+    }
+    LoadBarIcon(path, data->icon_size);
+}
+
+void InfamyBar::LoadBarIcon(const std::string &tex_path, float size)
+{
+    ImVec2 texSize(size, size);
+    tex = SKSEMenuFramework::LoadTexture(tex_path, texSize);
+}
+void InfamyBar::DrawColoredIcon(ImDrawList *draw_list, ImVec2 &center, ImVec2 &texSize)
+{
+    float pct = HeatFillPct();
+
+    ImU32 barColor = GetBarColor(pct);
+
+    ImVec2 full0(center.x - texSize.x, center.y - texSize.y);
+    ImVec2 full1(center.x + texSize.x, center.y + texSize.y);
+
+    ImVec2 uv10(0.0f, 0.0f);
+    ImVec2 uv11(1.0f, 1.0f);
+
+    if (InfamyBarData::GetSingleton()->GetIsVisible() && !RE::UI::GetSingleton()->IsApplicationMenuOpen())
+        ImGui::ImDrawListManager::AddImage(draw_list, tex, full0, full1, uv10, uv11, barColor);
+}
+
+float InfamyBar::HeatFillPct()
+{
+    float ret_val = 0.5f;
+    const auto &formL = FormLoader::Loader::GetSingleton();
+    if (formL->player_heat_system_global)
+    {
+        ret_val = std::clamp(HeatSystem::GetHeatValue() / 100.0f, 0.0f, 100.0f);
+    }
+    return ret_val;
+}
+
+ImU32 InfamyBar::GetBarColor(float fraction)
+{
+    ImVec4 color;
+
+    if (fraction <= 0.5f)
+    {
+        // Blue -> Yellow
+        float t = fraction / 0.5f;
+        color.x = (1.0f - t) * 0.0f + t * 1.0f; // R
+        color.y = (1.0f - t) * 0.0f + t * 1.0f; // G
+        color.z = (1.0f - t) * 1.0f + t * 0.0f; // B
+    }
+    else if (fraction <= 0.7f)
+    {
+        // Yellow -> Orange
+        float t = (fraction - 0.5f) / 0.2f;
+        color.x = (1.0f - t) * 1.0f + t * 1.0f; // R
+        color.y = (1.0f - t) * 1.0f + t * 0.5f; // G
+        color.z = (1.0f - t) * 0.0f + t * 0.0f; // B
+    }
+    else if (fraction <= 0.9f)
+    {
+        // Orange -> Red
+        float t = (fraction - 0.7f) / 0.2f;
+        color.x = 1.0f;
+        color.y = (1.0f - t) * 0.5f + t * 0.0f;
+        color.z = 0.0f;
+    }
+    else
+    {
+        // Max Red
+        color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+    color.w = 0.9f; 
+    return ImGui::ColorConvertFloat4ToU32(color);
+}
+
+} // namespace InfamyHUD
+
+namespace Menu
+{
+void RegisterThiefMenu()
+{
+    if (!SKSEMenuFramework::IsInstalled())
+    {
+        return;
+    }
+    SKSEMenuFramework::SetSection(Titles::MOD_TITLE);
+    SKSEMenuFramework::AddSectionItem(Titles::SETTINGS_SEC, Settings::RenderSettings);
+    RestoreFromSettings();
+}
+void RestoreFromSettings()
+{
+
+    using namespace Menu::Settings::Var;
+    using set = Config::Settings;
+
+    enable_lockpick_timer = set::enable_lockpick_timer.GetValue();
+    enable_pickpocket_timer = set::enable_pickpocket_timer.GetValue();
+    enable_dyn_pickpocket_cap = set::enable_dyn_pickpocket_cap.GetValue();
+    remove_lockpick_on_timeout = set::remove_lockpick_on_timeout.GetValue();
+
+    pickpocket_min_time = set::pickpocket_min_time.GetValue();
+    pickpocket_max_time = set::pickpocket_max_time.GetValue();
+    lockpicking_min_time = set::lockpicking_min_time.GetValue();
+    lockpicking_max_time = set::lockpicking_max_time.GetValue();
+
+    reputation_min_item_value = set::reputation_min_item_value.GetValue();
+    hourly_heat_decrease = set::hourly_heat_decrease.GetValue();
+    fence_value_heat_threshold = set::fence_value_heat_threshold.GetValue();
+    show_infamy_meter = set::show_infamy_meter.GetValue();
+    enable_dynamic_lockpicking = set::enable_dynamic_lockpicking.GetValue();
+    
+    bar_pos_x = set::bar_pos_x.GetValue();
+    bar_pos_y = set::bar_pos_y.GetValue();
+    icon_size = set::icon_size.GetValue();
+    texture_name = set::texture_name.GetValue();
+
+    screen_notif_text = set::screen_notif_text.GetValue();
+    enable_gold_rush_sound = set::enable_gold_rush_sound.GetValue();
+    gold_rush_shader_duration = set::gold_rush_shader_duration.GetValue();
+
+    visibility_key = set::visibility_key.GetValue();
+}
+void RenderSystem()
+{
+    ImGuiMCP::ImGui::NewLine();
+    ImGuiMCP::ImGui::SeparatorText(Label::system.c_str());
+
+    if (ImGuiMCP::ImGui::Button(Label::save_settings.c_str()))
+    {
+        Config::Settings::GetSingleton()->Update(true);
+    }
+
+    ImGuiMCP::ImGui::SameLine();
+    if (ImGuiMCP::ImGui::Button(Label::restore_defaults.c_str()))
+    {
+        ResetDefaults();
+    }
+}
+void ResetDefaults()
+{
+    using set = Config::Settings;
+    using namespace Settings::Var;
+
+    enable_lockpick_timer = true;
+    enable_pickpocket_timer = true;
+    enable_dyn_pickpocket_cap = true;
+    remove_lockpick_on_timeout = true;
+
+    pickpocket_min_time = 10.0f;
+    pickpocket_max_time = 50.0f;
+    lockpicking_min_time = 10.0f;
+    lockpicking_max_time = 50.0f;
+
+    reputation_min_item_value = 50;
+    hourly_heat_decrease = 2;
+    fence_value_heat_threshold = 158;
+    show_infamy_meter = true;
+    enable_dynamic_lockpicking = true;
+
+    bar_pos_x = 655.0f;
+    bar_pos_y = 55.0f;
+    icon_size = 50.f;
+    texture_name = "Flame.png";
+
+    screen_notif_text = "Something catches your eye...";
+    enable_gold_rush_sound = true;
+    gold_rush_shader_duration = 30.0f;
+
+    visibility_key = 65;
+
+    set::enable_lockpick_timer.SetValue(enable_lockpick_timer);
+    set::enable_pickpocket_timer.SetValue(enable_pickpocket_timer);
+    set::enable_dyn_pickpocket_cap.SetValue(enable_dyn_pickpocket_cap);
+    set::remove_lockpick_on_timeout.SetValue(remove_lockpick_on_timeout);
+
+    set::pickpocket_min_time.SetValue(pickpocket_min_time);
+    set::pickpocket_max_time.SetValue(pickpocket_max_time);
+    set::lockpicking_min_time.SetValue(lockpicking_min_time);
+    set::lockpicking_max_time.SetValue(lockpicking_max_time);
+
+    set::reputation_min_item_value.SetValue(reputation_min_item_value);
+    set::hourly_heat_decrease.SetValue(hourly_heat_decrease);
+    set::fence_value_heat_threshold.SetValue(fence_value_heat_threshold);
+    set::show_infamy_meter.SetValue(show_infamy_meter);
+    set::enable_dynamic_lockpicking.SetValue(enable_dynamic_lockpicking);
+
+    set::bar_pos_x.SetValue(bar_pos_x);
+    set::bar_pos_y.SetValue(bar_pos_y);
+    set::icon_size.SetValue(icon_size);
+    set::texture_name.SetValue(texture_name);
+
+    set::screen_notif_text.SetValue(screen_notif_text);
+    set::enable_gold_rush_sound.SetValue(enable_gold_rush_sound);
+    set::gold_rush_shader_duration.SetValue(gold_rush_shader_duration);
+
+    set::visibility_key.SetValue(visibility_key);
+    InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->pos_y = bar_pos_y;
+    InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->pos_x = bar_pos_x;
+    InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->icon_size = icon_size;
+    InfamyHUD::InfamyBar::ChangeSizeAndReloadTexture(set::icon_size.GetValue());
+
+    set::GetSingleton()->Update(true);
+}
+} // namespace Menu
+
+void Menu::Settings::DrawHotkeyConfigUI()
+{
+    std::string key_name = hotkeys::details::GetNameByKey(Config::Settings::visibility_key.GetValue()).data();
+
+    //not really needed but looks better in the menu
+	std::transform(key_name.begin(), key_name.end(), key_name.begin(), ::toupper);
+
+    ImGui::Text(std::format("Hotkey: {}", key_name).c_str());
+    ImGui::SameLine();
+
+    if (!Menu::Settings::capture_key_input) {
+        if (ImGui::Button("Rebind")) {
+            Menu::Settings::capture_key_input = true;
+            Menu::Settings::Var::visibility_key = 0;
+        }
+        ImGui::SameLine();
+		ux::HelpMarker("Press the desired key to rebind the visibility toggle.");
+    }
+    else {
+        ImGui::Text("Press any key");
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            Menu::Settings::capture_key_input = false;
+			Settings::Var::visibility_key = Config::Settings::visibility_key.GetValue();
+        }
+    }
+    if (Menu::Settings::Var::visibility_key != 0)
+    {
+        Config::Settings::visibility_key.SetValue(Menu::Settings::Var::visibility_key);
+        Menu::Settings::capture_key_input = false;
+    }
+}
+void __stdcall Menu::Settings::RenderSettings()
+{
+    using set = Config::Settings;
+    FontAwesome::PushSolid();
+    ImGui::Text(Menu::Titles::MOD_TITLE.c_str());
+    ImGui::NewLine();
+
+    // ---------------------------
+    // --------Lockpicking--------
+    // ---------------------------
+    ImGui::SeparatorText(Menu::Settings::Titles::LOCKPICKING_SETTINGS.c_str());
+
+    SettingCheckbox(Label::enable_lockpick_timer.c_str(), Var::enable_lockpick_timer, set::enable_lockpick_timer,
+                    Tool::enable_lockpick_timer.c_str());
+	ImGui::SameLine();
+    SettingCheckbox(Label::remove_lockpick_on_timeout.c_str(), Var::remove_lockpick_on_timeout,
+                    set::remove_lockpick_on_timeout, Tool::remove_lockpick_on_timeout.c_str());
+
+    SettingCheckbox(Label::enable_dynamic_lockpicking.c_str(), Var::enable_dynamic_lockpicking,
+                    set::enable_dynamic_lockpicking, Tool::enable_dynamic_lockpicking.c_str());
+
+    SettingSlider(Label::lockpicking_min_time.c_str(), Var::lockpicking_min_time, 5.0f, 30.0f, "%.1fs",
+                  set::lockpicking_min_time, Tool::lockpicking_min_time.c_str());
+
+    SettingSlider(Label::lockpicking_max_time.c_str(), Var::lockpicking_max_time, 31.0f, 120.0f, "%.1fs",
+                  set::lockpicking_max_time, Tool::lockpicking_max_time.c_str());
+
+    // ---------------------------
+    // -------Pickpocketing-------
+    // ---------------------------
+
+    ImGui::SeparatorText(Menu::Settings::Titles::PICKPOCKET_SETTINGS.c_str());
+
+    SettingCheckbox(Label::enable_pickpocket_timer.c_str(), Var::enable_pickpocket_timer, set::enable_pickpocket_timer,
+                    Tool::enable_pickpocket_timer.c_str());
+    ImGui::SameLine();
+    SettingCheckbox(Label::enable_dyn_pickpocket_cap.c_str(), Var::enable_dyn_pickpocket_cap,
+                    set::enable_dyn_pickpocket_cap, Tool::enable_dyn_pickpocket_cap.c_str());
+
+    SettingSlider(Label::pickpocket_min_time.c_str(), Var::pickpocket_min_time, 5.0f, 30.0f, "%.1fs",
+                  set::pickpocket_min_time, Tool::pickpocket_min_time.c_str());
+
+    SettingSlider(Label::pickpocket_max_time.c_str(), Var::pickpocket_max_time, 31.0f, 120.0f, "%.1fs",
+                  set::pickpocket_max_time, Tool::pickpocket_max_time.c_str());
+
+    // ---------------------------
+    // --------Reputation---------
+    // ---------------------------
+
+    ImGui::SeparatorText(Menu::Settings::Titles::REPUTATION_SETTINGS.c_str());
+
+    SettingSliderINT(Label::reputation_min_item_value.c_str(), Var::reputation_min_item_value, 30, 400, "%d",
+                     set::reputation_min_item_value, Tool::reputation_min_item_value.c_str());
+
+    SettingSliderINT(Label::hourly_heat_decrease.c_str(), Var::hourly_heat_decrease, 1, 10, "%d",
+                     set::hourly_heat_decrease, Tool::hourly_heat_decrease.c_str());
+
+    SettingSliderINT(Label::fence_value_heat_threshold.c_str(), Var::fence_value_heat_threshold, 100, 600, "%d",
+                     set::fence_value_heat_threshold, Tool::fence_value_heat_threshold.c_str());
+
+    ImGui::SeparatorText(Menu::Settings::Titles::INFAMY_METER_SETTINGS.c_str());
+
+    if (SettingCheckbox(Label::show_infamy_meter.c_str(), Var::show_infamy_meter, set::show_infamy_meter,
+                        Tool::show_infamy_meter.c_str()))
+    {
+        InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->SetIsVisible(Var::show_infamy_meter);
+    };
+
+    // ---------------------------
+    // -----------Size------------
+    // ---------------------------
+    ImGui::SeparatorText("Size");
+
+    if (SettingSlider(Label::icon_size.c_str(), Var::icon_size, 32.0f, 512.0f, "%.0f px", set::icon_size,
+                      Tool::icon_size.c_str()))
+    {
+        InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->icon_size = Var::icon_size;
+        InfamyHUD::InfamyBar::ChangeSizeAndReloadTexture(set::icon_size.GetValue());
+    };
+
+    // ---------------------------
+    // --------Positioning--------
+    // ---------------------------
+    ImGui::SeparatorText("Position");
+
+    if (SettingSlider(Label::bar_pos_x.c_str(), Var::bar_pos_x, 0.0f, 4000.0f, "%.0f px", set::bar_pos_x,
+                      Tool::bar_pos_x.c_str()))
+    {
+        InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->pos_x = Var::bar_pos_x;
+    };
+
+    if (SettingSlider(Label::bar_pos_y.c_str(), Var::bar_pos_y, 0.0f, 4000.0f, "%.0f px", set::bar_pos_y,
+                      Tool::bar_pos_y.c_str()))
+    {
+        InfamyHUD::InfamyBar::InfamyBarData::GetSingleton()->pos_y = Var::bar_pos_y;
+    };
+
+    char buffer[256];
+    strncpy_s(buffer, Var::texture_name.c_str(), sizeof(buffer));
+    if (ImGui::InputText(Label::texture_name.c_str(), buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        Var::texture_name = std::string(buffer);
+        Config::Settings::texture_name.SetValue(Var::texture_name);
+        InfamyHUD::InfamyBar::ChangeSizeAndReloadTexture(Config::Settings::icon_size.GetValue());
+    }
+    ImGui::SameLine();
+    ux::HelpMarker(Tool::texture_name.c_str());
+
+    // ---------------------------
+    // --------Perk Options-------
+    // ---------------------------
+    ImGui::SeparatorText("Effects");
+
+    SettingCheckbox(Label::enable_gold_rush_sound.c_str(), Var::enable_gold_rush_sound, set::enable_gold_rush_sound,
+                    Tool::enable_gold_rush_sound.c_str());
+
+    SettingSlider(Label::gold_rush_shader_duration.c_str(), Var::gold_rush_shader_duration, 1.0f, 240.0f, "%.0f sec",
+                  set::gold_rush_shader_duration, Tool::gold_rush_shader_duration.c_str());
+    
+	char notifBuffer[256];
+    strncpy_s(notifBuffer, Var::screen_notif_text.c_str(), sizeof(notifBuffer));
+	if (ImGui::InputText("Gold Rush Notification Text", notifBuffer, sizeof(notifBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        Var::screen_notif_text = std::string(notifBuffer);
+	    Config::Settings::screen_notif_text.SetValue(Var::screen_notif_text);
+	}
+    ImGui::SameLine();
+	ux::HelpMarker(Tool::screen_notif_text.c_str());
+
+    //---------------------------
+    //Hotkey and Saving/Resetting
+    //---------------------------
+    DrawHotkeyConfigUI();
+    ImGui::NewLine();
+    RenderSystem();
+
+    FontAwesome::Pop();
+}
+

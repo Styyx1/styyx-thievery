@@ -31,7 +31,7 @@ namespace Stealing {
 
 	uint16_t NightThief::CalculateReputationGain(uint32_t itemValue)
 	{
-		if (itemValue < Config::Settings::GetSingleton()->reputation_min_item_value.GetValue())
+		if (itemValue < static_cast<uint32_t>(Config::Settings::GetSingleton()->reputation_min_item_value.GetValue()))
 			return 0;
 
 		float gain = 1.0f + ((itemValue - 50.0f) / 550.0f) * 9.0f;
@@ -138,7 +138,6 @@ namespace Stealing {
 		}
 
 		_Hook3(a_this, a_faction, a_violent, a_amount);
-		REX::DEBUG("info dump: actor is: {}, faction is: {}, violent crime bool is: {}, amount is: {}", a_this->GetName(), a_faction->GetName(), a_violent ? "true" : "false", a_amount);
 		if (a_amount > 0 && !a_violent) {
 			DecreaseReputation(0.2f); // decrease your thief reputation when you are getting caught.
 			CalculateReputationLootChance();
@@ -193,12 +192,13 @@ namespace Stealing {
 					RE::GFxValue value(RE::GFxValue::ValueType::kNumber);
 					a_updateObj.GetMember("value", &value);
 					value.SetNumber(value.GetNumber() * mult);
-					a_updateObj.SetMember("value", value);					
-					HeatValues::item_value_fenced = value.GetNumber() / GetBarterPriceFactor(RE::PlayerCharacter::GetSingleton());				
+					a_updateObj.SetMember("value", value);
+					// Calculate and set fenced item value for tracking, needs rounding to nearest int
+					HeatValues::item_value_fenced = std::lround(value.GetNumber() / static_cast<double>(GetBarterPriceFactor(RE::PlayerCharacter::GetSingleton())));				
 				}				
 			}
 		}
-		oldFunc.Invoke("call", a_params.retVal, a_params.argsWithThisRef, a_params.argCount + 1);
+		oldFunc.Invoke("call", a_params.retVal, a_params.argsWithThisRef, static_cast<RE::UPInt>(a_params.argCount) + 1);
 	}
 
 	void NightThiefFencing::PostCreate(RE::BarterMenu* a_this)

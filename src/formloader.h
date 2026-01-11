@@ -34,7 +34,6 @@ namespace FormLoader{
 		RE::TESGlobal* total_value_item_fenced;
 		RE::TESGlobal* fence_rep_special_item_global;
 		RE::TESGlobal* player_heat_system_global;
-		RE::TESImageSpaceModifier *gold_rush_imad;
 		RE::BGSSoundDescriptorForm* gold_rush_sound;
 		RE::TESEffectShader* glow_shader;
 		RE::BGSPerk* gold_rush_perk;

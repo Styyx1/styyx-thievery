@@ -34,7 +34,7 @@ bool LockpickingMenu::GetIsTimerRunning()
 
 bool LockpickingMenu::IsTimerEnabled()
 {
-	return _timerEnabled;
+	return Config::Settings::enable_lockpick_timer.GetValue();
 }
 
 static bool angle_adjusted = false;
@@ -43,12 +43,15 @@ RE::UI_MESSAGE_RESULTS LockpickingMenu::ProcessMessage(RE::LockpickingMenu* a_th
 {
 	static const auto& config = Config::Settings::GetSingleton();
 	if (IsTimerEnabled()) {
+		float angle = 0;
 		if (a_message.type == RE::UI_MESSAGE_TYPE::kShow) {
 			StartLockpickTimer();
-			angle_adjusted = false;
+			angle = a_this->pickAngle;
 		}
 		if (a_message.type == RE::UI_MESSAGE_TYPE::kHide) {
 			StopLockpickTimer();
+			if (a_this->pickAngle != angle)
+				LockpickConsequeces(RE::PlayerCharacter::GetSingleton(), false);
 		}
 		if (lockpick_timer.IsRunning() && lockpick_timer.Elapsed() >= lockpick_timer.GetExpectedRuntime()) {
 			StopLockpickTimer();

@@ -103,7 +103,7 @@ void HeatSystem::UpdatePassiveHeatDecay() {
 			StartIngameHourTimer();
 		} else if (g_heat_decrease_timer.Elapsed() >= g_heat_decrease_timer.GetExpectedRuntime()) {
 			g_heat_decrease_timer.Reset();
-			DecreaseHeat(Config::Settings::hourly_heat_decrease.GetValue());
+			DecreaseHeat(static_cast<float>(Config::Settings::hourly_heat_decrease.GetValue()));
 			REX::DEBUG("Decrease heat over time");
 		}
 	} else {
@@ -189,11 +189,11 @@ void HeatSystem::PlayerUpdateLoop(RE::PlayerCharacter* a_player, float a_delta)
 				if (random_item.first && random_item.second > 0 && !actor_pickpocketed.contains(close_actor)) {
 					actor_pickpocketed.insert(close_actor);
 					REX::DEBUG("attempting to pickpocket item: {} with amount: {}", random_item.first->GetName(), random_item.second);
-					if (Randomiser::GetRandomFloat(0.0f, 100.0f) < GetRandomPickpocketChance(a_player->GetActorValue(RE::ActorValue::kPickpocket), GetHeatValue(), Stealing::NightThief::GetNightReputation())) {
+					if (Randomiser::GetRandomFloat(0.0f, 100.0f) < GetRandomPickpocketChance(a_player->GetActorValue(RE::ActorValue::kPickpocket), GetHeatValue(), static_cast<float>(Stealing::NightThief::GetNightReputation()))) {
 						REX::DEBUG("pickpocket success");					
 						close_actor->RemoveItem(random_item.first, random_item.second, RE::ITEM_REMOVE_REASON::kSteal, nullptr, a_player);
 						AddPickpocketExperience();
-						RE::DebugNotification(std::format("You successfully pickpocketed {} from {}.",random_item.first->GetName(),close_actor->GetName()).c_str());
+						RE::SendHUDMessage::ShowHUDMessage(std::format("You successfully pickpocketed {} from {}.",random_item.first->GetName(),close_actor->GetName()).c_str());
 					}
 					else {
 						REX::DEBUG("pickpocket failed");
@@ -298,7 +298,7 @@ void HeatSystem::DoCalculateDetection(RE::Actor* a_this, RE::Actor* target, std:
 {
 	_Hook10(a_this, target, score, spotted, hasLOS, reason, lastPos, soundLvl, unk8, unk9);	
 	if (Utility::IsGuardNearby(target, 512) && target->IsSneaking()) {
-		RE::DebugNotification("Your presence is noticed...");
+		RE::SendHUDMessage::ShowHUDMessage("Your presence is noticed...");
 		if (spotted) {
 			auto infamy = GetHeatValue();
 			if (infamy >= 90.0f && a_this->IsGuard()) {
@@ -353,11 +353,10 @@ RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorC
 			_foundStuff = true;
 			const auto& settings = Config::Settings::GetSingleton();
 			for(const auto& item : valuables)
-			{				
+			{			
 				item->ApplyEffectShader(forms->glow_shader, settings->gold_rush_shader_duration.GetValue());
-#ifdef ENABLE_DEBUGGING
 				REX::DEBUG("Found valuable item: {} in cell: {}", item->GetName(), cell->GetName());
-#endif
+
 			}		
 			const char* sound = nullptr;
 			if (settings->enable_gold_rush_sound.GetValue()) {
@@ -365,8 +364,8 @@ RE::BSEventNotifyControl ReputationPerkHandler::ProcessEvent(const RE::BGSActorC
 			}
 			std::jthread{ [=] {
 				std::this_thread::sleep_for(std::chrono::seconds(1));
-				SKSE::GetTaskInterface()->AddTask([=] {
-					RE::DebugNotification(settings->screen_notif_text.GetValue().c_str(), sound);
+				SKSE::GetTaskInterface()->AddTask([=] {					
+					RE::SendHUDMessage::ShowHUDMessage(settings->screen_notif_text.GetValue().c_str(), sound);
 					});
 				} }.detach();	
 		}		
@@ -462,7 +461,6 @@ std::vector<RE::TESObjectREFR*> ReputationPerkHandler::GetValuablesInCell(RE::TE
 	po3Timer.start();	
 #endif
 	std::vector<RE::TESObjectREFR*> valuables;
-	bool found_item = false;
 	static const auto& settings = Config::Settings::GetSingleton();
 	a_cell->ForEachReference([this, &valuables](RE::TESObjectREFR* ref) {	
 		auto base = ref->GetBaseObject();
